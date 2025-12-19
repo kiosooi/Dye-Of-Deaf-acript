@@ -366,52 +366,6 @@ Tab:CreateToggle({
     end
 })
 
--- ===== FULLBRIGHT =====
-Tab:CreateSection("Brightness")
-
-local fullbright = false
-local saved = {}
-local lightConn
-
-local function saveLighting()
-    saved = {
-        Brightness = Lighting.Brightness,
-        ClockTime = Lighting.ClockTime,
-        Ambient = Lighting.Ambient,
-        OutdoorAmbient = Lighting.OutdoorAmbient,
-        GlobalShadows = Lighting.GlobalShadows
-    }
-end
-
-local function applyFullbright()
-    Lighting.Brightness = 2
-    Lighting.ClockTime = 14
-    Lighting.Ambient = Color3.new(1,1,1)
-    Lighting.OutdoorAmbient = Color3.new(1,1,1)
-    Lighting.GlobalShadows = false
-end
-
-local function restoreLighting()
-    for k,v in pairs(saved) do Lighting[k] = v end
-end
-
-Tab:CreateToggle({
-    Name = "FullBright",
-    CurrentValue = false,
-    Flag = "fullbright",
-    Callback = function(Value)
-        fullbright = Value
-        if fullbright then
-            saveLighting()
-            applyFullbright()
-            lightConn = Lighting.Changed:Connect(applyFullbright)
-        else
-            if lightConn then lightConn:Disconnect() end
-            restoreLighting()
-        end
-    end
-})
-
 ---------------------------------------------------------------------
 -- ===== ABILITIES TAB =====
 ---------------------------------------------------------------------
@@ -717,6 +671,51 @@ Tab:CreateToggle({
                 aiConn:Disconnect()
                 aiConn = nil
             end
+        end
+    end
+})
+
+-- ===== FULLBRIGHT =====
+
+local fullbright = false
+local saved = {}
+local lightConn
+
+local function saveLighting()
+    saved = {
+        Brightness = Lighting.Brightness,
+        ClockTime = Lighting.ClockTime,
+        Ambient = Lighting.Ambient,
+        OutdoorAmbient = Lighting.OutdoorAmbient,
+        GlobalShadows = Lighting.GlobalShadows
+    }
+end
+
+local function applyFullbright()
+    Lighting.Brightness = 2
+    Lighting.ClockTime = 14
+    Lighting.Ambient = Color3.new(1,1,1)
+    Lighting.OutdoorAmbient = Color3.new(1,1,1)
+    Lighting.GlobalShadows = false
+end
+
+local function restoreLighting()
+    for k,v in pairs(saved) do Lighting[k] = v end
+end
+
+Tab:CreateToggle({
+    Name = "FullBright",
+    CurrentValue = false,
+    Flag = "fullbright",
+    Callback = function(Value)
+        fullbright = Value
+        if fullbright then
+            saveLighting()
+            applyFullbright()
+            lightConn = Lighting.Changed:Connect(applyFullbright)
+        else
+            if lightConn then lightConn:Disconnect() end
+            restoreLighting()
         end
     end
 })
