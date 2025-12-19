@@ -726,18 +726,21 @@ Tab:CreateToggle({
 
 local AnimTab = Window:CreateTab("Animations", 0)
 
--- Helper to get your character from the team folder
+-- Helper to get your character
 local function getLocalCharacter()
-    local teamFolder
+    -- First check team folders
     if workspace.Teams:FindFirstChild("Civilians") and workspace.Teams.Civilians:FindFirstChild(LocalPlayer.Name) then
-        teamFolder = workspace.Teams.Civilians
+        return workspace.Teams.Civilians:FindFirstChild(LocalPlayer.Name)
     elseif workspace.Teams:FindFirstChild("Killers") and workspace.Teams.Killers:FindFirstChild(LocalPlayer.Name) then
-        teamFolder = workspace.Teams.Killers
-    else
-        return nil
+        return workspace.Teams.Killers:FindFirstChild(LocalPlayer.Name)
     end
 
-    return teamFolder:FindFirstChild(LocalPlayer.Name)
+    -- Fallback: check if LocalPlayer.Character exists (for lobby)
+    if LocalPlayer.Character then
+        return LocalPlayer.Character
+    end
+
+    return nil
 end
 
 -- Helper to apply animations
@@ -759,6 +762,7 @@ local function applyAnimations(walkId, runId, idleId)
         end
     end
 
+    -- Apply to standard and capitalized folders
     setFolderAnims("walk", walkId)
     setFolderAnims("run", runId)
     setFolderAnims("idle", idleId)
