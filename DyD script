@@ -1,0 +1,462 @@
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+-- SERVICES
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Lighting = game:GetService("Lighting")
+
+local LocalPlayer = Players.LocalPlayer
+
+-- WINDOW
+local Window = Rayfield:CreateWindow({
+    Name = "Dye of Deaf Script",
+    LoadingTitle = "Dye of Deaf",
+    LoadingSubtitle = "by Kosoi",
+    Theme = "Ocean",
+    ToggleUIKeybind = "K",
+    ConfigurationSaving = {
+        Enabled = true,
+        FolderName = "KosoiHub",
+        FileName = "DyeOfDeaf"
+    }
+})
+
+-- MAIN TAB
+local Tab = Window:CreateTab("Main", 0)
+Tab:CreateSection("Stamina")
+
+-- ===== STAMINA HELPERS =====
+local staminaValue = math.huge
+local autoStamina = false
+local staminaConn
+
+local function getStats()
+    if workspace.Teams:FindFirstChild("Civilians") and workspace.Teams.Civilians:FindFirstChild(LocalPlayer.Name) then
+        return workspace.Teams.Civilians[LocalPlayer.Name]:FindFirstChild("Stats")
+    end
+    if workspace.Teams:FindFirstChild("Killers") and workspace.Teams.Killers:FindFirstChild(LocalPlayer.Name) then
+        return workspace.Teams.Killers[LocalPlayer.Name]:FindFirstChild("Stats")
+    end
+    return nil
+end
+
+---------------------------------------------------------------------
+-- STAMINA INPUT (SAVED + LOADED)
+---------------------------------------------------------------------
+Tab:CreateInput({
+    Name = "Stamina Value",
+    PlaceholderText = "Example: 400 / 9999",
+    RemoveTextAfterFocusLost = false,
+    Flag = "stamina_value",
+    Callback = function(Text)
+        local num = tonumber(Text)
+        if num then
+            staminaValue = num
+        end
+    end
+})
+
+-- LOAD SAVED STAMINA VALUE ON EXECUTE / SERVER HOP
+task.defer(function()
+    local saved = Rayfield.Flags["stamina_value"]
+    if saved and tonumber(saved) then
+        staminaValue = tonumber(saved)
+    end
+end)
+
+-- AUTO STAMINA TOGGLE
+Tab:CreateToggle({
+    Name = "Auto Change Stamina",
+    CurrentValue = false,
+    Flag = "auto_stamina",
+    Callback = function(Value)
+        autoStamina = Value
+        if autoStamina then
+            staminaConn = RunService.Heartbeat:Connect(function()
+                local stats = getStats()
+                if stats then
+                    if stats:FindFirstChild("MaxStamina") then stats.MaxStamina.Value = staminaValue end
+                    if stats:FindFirstChild("Stamina") then stats.Stamina.Value = staminaValue end
+                end
+            end)
+        else
+            if staminaConn then staminaConn:Disconnect() staminaConn = nil end
+        end
+    end
+})
+
+-- ===== ESP (AUTO TEAM CHECK, AUTO UPDATE) =====
+Tab:CreateSection("ESP")
+
+local espEnabled = false
+local espCache = {}
+
+local function removeESP(plr)
+    if espCache[plr] then
+        espCache[plr]:Destroy()
+        espCache[plr] = nil
+    end
+end
+
+local function getPlayerTeam(plr)
+    if workspace.Teams:FindFirstChild("Killers") and workspace.Teams.Killers:FindFirstChild(plr.Name) then
+        return "Killer"
+    end
+    if workspace.Teams:FindFirstChild("Civilians") and workspace.Teams.Civilians:FindFirstChild(plr.Name) then
+        return "Civilian"
+    end
+    return nil
+end
+
+local function applyESPToPlayer(plr)
+    if not espEnabled then return end
+    if plr == LocalPlayer then return end
+    if not plr.Character then return end
+
+    removeESP(plr)
+
+    local team = getPlayerTeam(plr)
+    if not team then return end
+
+    local hl = Instance.new("Highlight")
+    hl.Adornee = plr.Character
+    hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+    hl.FillTransparency = 0.35
+    hl.OutlineTransparency = 0
+
+    if team == "Killer" then
+        hl.FillColor = Color3.fromRGB(255, 60, 60)
+        hl.OutlineColor = Color3.fromRGB(255, 0, 0)
+    else
+        hl.FillColor = Color3.fromRGB(60, 255, 60)
+        hl.OutlineColor = Color3.fromRGB(0, 255, 0)
+    end
+
+    hl.Parent = game.CoreGui
+    espCache[plr] = hl
+end
+
+local function refreshESP()
+    for _, plr in ipairs(Players:GetPlayers()) do
+        applyESPToPlayer(plr)
+    end
+end
+
+local function clearESP()
+    for plr, hl in pairs(espCache) do
+        if hl then hl:Destroy() end
+        espCache[plr] = nil
+    end
+end
+
+-- PLAYER CONNECTIONS
+Players.PlayerAdded:Connect(function(plr)
+    plr.CharacterAdded:Connect(function()
+        task.wait(0.5)
+        applyESPToPlayer(plr)
+    end)
+end)
+
+Players.PlayerRemoving:Connect(removeESP)
+
+-- AUTO REFRESH (TEAM / INVIS / MODEL CHANGES)
+task.spawn(function()
+    while true do
+        if espEnabled then
+            refreshESP()
+        end
+        task.wait(1)
+    end
+end)
+
+-- ESP TOGGLE
+Tab:CreateToggle({
+    Name = "ESP",
+    CurrentValue = false,
+    Flag = "esp",
+    Callback = function(Value)
+        espEnabled = Value
+        if Value then
+            refreshESP()
+        else
+            clearESP()
+        end
+    end
+})
+
+-- ===== PROXIMITY PROMPTS =====
+Tab:CreateSection("Proximity Prompts")
+
+local promptConn
+
+Tab:CreateToggle({
+    Name = "Instant Proximity Prompts",
+    CurrentValue = false,
+    Flag = "proximity",
+    Callback = function(Value)
+        if Value then
+            for _, p in pairs(workspace:GetDescendants()) do
+                if p:IsA("ProximityPrompt") then p.HoldDuration = 0 end
+            end
+            promptConn = workspace.DescendantAdded:Connect(function(d)
+                if d:IsA("ProximityPrompt") then d.HoldDuration = 0 end
+            end)
+        else
+            if promptConn then promptConn:Disconnect() promptConn = nil end
+        end
+    end
+})
+
+-- ===== FULLBRIGHT =====
+Tab:CreateSection("Brightness")
+
+local Paragraph = Tab:CreateParagraph({Title = "Why did i add this", Content = "This is good for Blackout Gamemode"})
+
+local fullbright = false
+local saved = {}
+local lightConn
+
+local function saveLighting()
+    saved = {
+        Brightness = Lighting.Brightness,
+        ClockTime = Lighting.ClockTime,
+        Ambient = Lighting.Ambient,
+        OutdoorAmbient = Lighting.OutdoorAmbient,
+        GlobalShadows = Lighting.GlobalShadows
+    }
+end
+
+local function applyFullbright()
+    Lighting.Brightness = 2
+    Lighting.ClockTime = 14
+    Lighting.Ambient = Color3.new(1,1,1)
+    Lighting.OutdoorAmbient = Color3.new(1,1,1)
+    Lighting.GlobalShadows = false
+end
+
+local function restoreLighting()
+    for k,v in pairs(saved) do Lighting[k] = v end
+end
+
+Tab:CreateToggle({
+    Name = "FullBright",
+    CurrentValue = false,
+    Flag = "fullbright",
+    Callback = function(Value)
+        fullbright = Value
+        if fullbright then
+            saveLighting()
+            applyFullbright()
+            lightConn = Lighting.Changed:Connect(applyFullbright)
+        else
+            if lightConn then lightConn:Disconnect() end
+            restoreLighting()
+        end
+    end
+})
+
+---------------------------------------------------------------------
+-- ===== ABILITIES TAB =====
+---------------------------------------------------------------------
+
+local AbilitiesTab = Window:CreateTab("Abilities", 0)
+AbilitiesTab:CreateSection("Card Abilities")
+
+-- Ability module data
+local CardAbilities = {
+    { Name = "Punch", Icon = "rbxassetid://73130054435684" },
+    { Name = "Caretaker", Icon = "rbxassetid://79847866387639" },
+    { Name = "Revolver", Icon = "rbxassetid://121722959097329" },
+    { Name = "Hotdog", Icon = "rbxassetid://81176509322805" },
+    { Name = "Bonus Pad", Icon = "rbxassetid://109145887371111" },
+    { Name = "Taunt", Icon = "rbxassetid://122433943011026" },
+    { Name = "Cloak", Icon = "rbxassetid://124123778974648" },
+    { Name = "Dash", Icon = "rbxassetid://117074852938163" },
+    { Name = "Adrenaline", Icon = "rbxassetid://130391534451239" },
+    { Name = "Block", Icon = "rbxassetid://114764935401015" },
+    { Name = "Banana Peel", Icon = "rbxassetid://77890674914190" },
+}
+
+-- Build dropdown name list
+local AbilityNames = {}
+for _, ability in ipairs(CardAbilities) do
+    table.insert(AbilityNames, ability.Name)
+end
+
+local selectedAbility1 = AbilityNames[1]
+local selectedAbility2 = AbilityNames[2]
+
+---------------------------------------------------------------------
+-- Dropdown 1 (FIXED)
+---------------------------------------------------------------------
+AbilitiesTab:CreateDropdown({
+    Name = "Card ability 1",
+    Options = AbilityNames,
+    CurrentOption = { selectedAbility1 },
+    Callback = function(Value)
+        selectedAbility1 = Value[1]
+    end
+})
+
+---------------------------------------------------------------------
+-- Dropdown 2 (FIXED)
+---------------------------------------------------------------------
+AbilitiesTab:CreateDropdown({
+    Name = "Card ability 2",
+    Options = AbilityNames,
+    CurrentOption = { selectedAbility2 },
+    Callback = function(Value)
+        selectedAbility2 = Value[1]
+    end
+})
+
+---------------------------------------------------------------------
+-- Helper to get ability data
+---------------------------------------------------------------------
+local function getAbilityData(name)
+    for _, ability in ipairs(CardAbilities) do
+        if ability.Name == name then
+            return ability
+        end
+    end
+end
+
+---------------------------------------------------------------------
+-- Button: Get Card Abilities (FIXED)
+---------------------------------------------------------------------
+AbilitiesTab:CreateButton({
+    Name = "Get Card abilities",
+    Callback = function()
+        local a1 = getAbilityData(selectedAbility1)
+        local a2 = getAbilityData(selectedAbility2)
+
+        if not a1 or not a2 then
+            warn("Invalid ability selection")
+            return
+        end
+
+        game:GetService("ReplicatedStorage")
+            :WaitForChild("Setup")
+            :FireServer(
+                { Name = a1.Name, Icon = a1.Icon },
+                { Name = a2.Name, Icon = a2.Icon }
+            )
+    end
+})
+
+---------------------------------------------------------------------
+-- Auto delete Card Pick GUI
+---------------------------------------------------------------------
+local autoDeleteCardPick = false
+
+AbilitiesTab:CreateToggle({
+    Name = "Auto delete Pick Card ScreenGui",
+    CurrentValue = false,
+    Flag = "auto_delete_cardpick",
+    Callback = function(Value)
+        autoDeleteCardPick = Value
+
+        if Value then
+            task.spawn(function()
+                while autoDeleteCardPick do
+                    local gui = LocalPlayer:FindFirstChild("PlayerGui")
+                    if gui then
+                        local cardPick = gui:FindFirstChild("CardPick")
+                        if cardPick then
+                            cardPick:Destroy()
+                        end
+                    end
+                    task.wait(1)
+                end
+            end)
+        end
+    end
+})
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local SetupRemote = ReplicatedStorage:WaitForChild("Setup")
+
+local SynergySection = AbilitiesTab:CreateSection("Synergies")
+
+-- DashTech (Taunt + Dash)
+AbilitiesTab:CreateButton({
+    Name = "DashTech (Taunt + Dash)",
+    Callback = function()
+        SetupRemote:FireServer(
+            {Name = "Taunt", Icon = "rbxassetid://122433943011026"},
+            {Name = "Dash", Icon = "rbxassetid://117074852938163"}
+        )
+    end
+})
+
+-- CloakTech (Taunt + Cloak)
+AbilitiesTab:CreateButton({
+    Name = "CloakTech (Taunt + Cloak)",
+    Callback = function()
+        SetupRemote:FireServer(
+            {Name = "Taunt", Icon = "rbxassetid://122433943011026"},
+            {Name = "Cloak", Icon = "rbxassetid://124123778974648"}
+        )
+    end
+})
+
+-- Carepad (Caretaker + Bonus Pad)
+AbilitiesTab:CreateButton({
+    Name = "Carepad (Caretaker + Bonus Pad)",
+    Callback = function()
+        SetupRemote:FireServer(
+            {Name = "Caretaker", Icon = "rbxassetid://79847866387639"},
+            {Name = "Bonus Pad", Icon = "rbxassetid://109145887371111"}
+        )
+    end
+})
+
+-- DamagePad (Bonus Pad + Punch)
+AbilitiesTab:CreateButton({
+    Name = "DamagePad (Bonus Pad + Punch)",
+    Callback = function()
+        SetupRemote:FireServer(
+            {Name = "Bonus Pad", Icon = "rbxassetid://109145887371111"},
+            {Name = "Punch", Icon = "rbxassetid://73130054435684"}
+        )
+    end
+})
+
+-- LoveShot (Revolver + Caretaker)
+AbilitiesTab:CreateButton({
+    Name = "LoveShot (Revolver + Caretaker)",
+    Callback = function()
+        SetupRemote:FireServer(
+            {Name = "Revolver", Icon = "rbxassetid://121722959097329"},
+            {Name = "Caretaker", Icon = "rbxassetid://79847866387639"}
+        )
+    end
+})
+
+-- Black Punch (Punch + Block)
+AbilitiesTab:CreateButton({
+    Name = "Black Punch (Punch + Block)",
+    Callback = function()
+        SetupRemote:FireServer(
+            {Name = "Punch", Icon = "rbxassetid://73130054435684"},
+            {Name = "Block", Icon = "rbxassetid://114764935401015"}
+        )
+    end
+})
+
+
+local Tab = Window:CreateTab("Misc", 0) -- Title, Image
+
+local Button = Tab:CreateButton({
+   Name = "Infinite yield",
+   Callback = function()
+   loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()-- The function that takes place when the button is pressed
+   end,
+})
+
+local Button = Tab:CreateButton({
+   Name = "Dex explorer",
+   Callback = function()
+   loadstring(game:HttpGet("https://raw.githubusercontent.com/infyiff/backup/main/dex.lua"))()-- The function that takes place when the button is pressed
+   end,
+})
