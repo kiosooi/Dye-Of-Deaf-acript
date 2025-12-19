@@ -734,7 +734,8 @@ local function applyAnimations(walkId, runId, idleId)
     local animate = char:FindFirstChild("Animate")
     if not animate then return end
 
-    local function setAnim(folderName, animId)
+    -- Helper to set all animations in a folder if it exists
+    local function setFolderAnims(folderName, animId)
         local folder = animate:FindFirstChild(folderName)
         if folder then
             for _, anim in ipairs(folder:GetChildren()) do
@@ -745,12 +746,20 @@ local function applyAnimations(walkId, runId, idleId)
         end
     end
 
-    setAnim("walk", walkId)
-    setAnim("run", runId)
-    setAnim("idle", idleId)
+    -- Try common folder names
+    setFolderAnims("walk", walkId)
+    setFolderAnims("run", runId)
+    setFolderAnims("idle", idleId)
 
+    -- Fallback: some rigs use lowercase first letter (walk/run/idle)
+    setFolderAnims("Walk", walkId)
+    setFolderAnims("Run", runId)
+    setFolderAnims("Idle", idleId)
+
+    -- Force Humanoid to reload animations
     local hum = char:FindFirstChildOfClass("Humanoid")
     if hum then
+        hum:LoadAnimation(Instance.new("Animation")):Stop() -- dummy animation to reset
         hum:ChangeState(Enum.HumanoidStateType.Landed)
     end
 end
@@ -758,7 +767,6 @@ end
 ---------------------------------------------------------------------
 -- Civilian "Section"
 ---------------------------------------------------------------------
-
 
 AnimTab:CreateSection("Civilian Anims")
 
