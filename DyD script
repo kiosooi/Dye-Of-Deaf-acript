@@ -85,7 +85,7 @@ Tab:CreateToggle({
     end
 })
 
--- ESP Section
+-- ===== ESP SECTION =====
 Tab:CreateSection("ESP")
 
 local showHP = true
@@ -93,7 +93,7 @@ local showName = true
 local espEnabled = false
 local espCache = {}
 
--- ESP Functions
+-- Helper: get player team
 local function getPlayerTeam(plr)
     if workspace.Teams:FindFirstChild("Killers") and workspace.Teams.Killers:FindFirstChild(plr.Name) then
         return "Killer"
@@ -103,6 +103,7 @@ local function getPlayerTeam(plr)
     return nil
 end
 
+-- Remove ESP
 local function removeESP(plr)
     if espCache[plr] then
         if espCache[plr].Billboard then espCache[plr].Billboard:Destroy() end
@@ -110,6 +111,7 @@ local function removeESP(plr)
     end
 end
 
+-- Create ESP for player
 local function createESP(plr)
     if not plr.Character then return end
     removeESP(plr)
@@ -126,7 +128,6 @@ local function createESP(plr)
     local textLabel = Instance.new("TextLabel")
     textLabel.Size = UDim2.new(1, 0, 1, 0)
     textLabel.BackgroundTransparency = 1
-    textLabel.TextColor3 = getPlayerTeam(plr) == "Killer" and Color3.fromRGB(255,0,0) or Color3.fromRGB(0,255,0)
     textLabel.TextStrokeTransparency = 0
     textLabel.Font = Enum.Font.SourceSansBold
     textLabel.TextScaled = true
@@ -142,17 +143,31 @@ local function createESP(plr)
     }
 end
 
+-- Update ESP loop
 local function updateESP()
     for plr, data in pairs(espCache) do
-        if plr.Character and plr:FindFirstChild("leaderstats") and plr.leaderstats:FindFirstChild("HP") then
-            data.HP = plr.leaderstats.HP.Value
-        end
-        if data.TextLabel then
-            data.TextLabel.Text = (showHP and ("HP: "..data.HP) or "") .. (showHP and showName and " | " or "") .. (showName and data.Name or "")
+        if plr.Character then
+            local hrp = plr.Character:FindFirstChild("HumanoidRootPart") or plr.Character.PrimaryPart
+            if hrp and data.Billboard then
+                data.Billboard.Adornee = hrp
+            end
+
+            if plr:FindFirstChild("leaderstats") and plr.leaderstats:FindFirstChild("HP") then
+                data.HP = plr.leaderstats.HP.Value
+            end
+
+            local team = getPlayerTeam(plr)
+            if data.TextLabel then
+                data.TextLabel.TextColor3 = (team == "Killer") and Color3.fromRGB(255,0,0) or Color3.fromRGB(0,255,0)
+                data.TextLabel.Text = (showHP and ("HP: "..data.HP) or "") .. (showHP and showName and " | " or "") .. (showName and data.Name or "")
+            end
+        else
+            removeESP(plr)
         end
     end
 end
 
+-- Refresh ESP (create for all current players)
 local function refreshESP()
     for _, plr in ipairs(Players:GetPlayers()) do
         if plr ~= LocalPlayer and getPlayerTeam(plr) then
@@ -171,14 +186,14 @@ end)
 
 Players.PlayerRemoving:Connect(removeESP)
 
--- ESP Loop
+-- ESP main loop
 task.spawn(function()
     while true do
         if espEnabled then
             refreshESP()
             updateESP()
         end
-        task.wait(0.5)
+        task.wait(0.2)
     end
 end)
 
