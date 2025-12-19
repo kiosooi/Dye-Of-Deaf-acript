@@ -734,45 +734,35 @@ local function applyAnimations(walkId, runId, idleId)
     local animate = char:FindFirstChild("Animate")
     if not animate then return end
 
-    -- Walk
-    if animate:FindFirstChild("walk") then
-        for _, anim in ipairs(animate.walk:GetChildren()) do
-            if anim:IsA("Animation") then
-                anim.AnimationId = walkId
+    local function setAnim(folderName, animId)
+        local folder = animate:FindFirstChild(folderName)
+        if folder then
+            for _, anim in ipairs(folder:GetChildren()) do
+                if anim:IsA("Animation") then
+                    anim.AnimationId = animId
+                end
             end
         end
     end
 
-    -- Run
-    if animate:FindFirstChild("run") then
-        for _, anim in ipairs(animate.run:GetChildren()) do
-            if anim:IsA("Animation") then
-                anim.AnimationId = runId
-            end
-        end
-    end
+    setAnim("walk", walkId)
+    setAnim("run", runId)
+    setAnim("idle", idleId)
 
-    -- Idle
-    if animate:FindFirstChild("idle") then
-        for _, anim in ipairs(animate.idle:GetChildren()) do
-            if anim:IsA("Animation") then
-                anim.AnimationId = idleId
-            end
-        end
-    end
-
-    -- Force animation refresh
-    local humanoid = char:FindFirstChildOfClass("Humanoid")
-    if humanoid then
-        humanoid:ChangeState(Enum.HumanoidStateType.Landed)
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    if hum then
+        hum:ChangeState(Enum.HumanoidStateType.Landed)
     end
 end
 
 ---------------------------------------------------------------------
--- Civilian Section + Button
+-- Civilian "Section"
 ---------------------------------------------------------------------
 
-AnimTab:CreateSection("Civilian Anims")
+AnimTab:CreateParagraph({
+    Title = "Civilian Anims",
+    Content = ""
+})
 
 AnimTab:CreateButton({
     Name = "Default Civilian Anims",
@@ -786,10 +776,13 @@ AnimTab:CreateButton({
 })
 
 ---------------------------------------------------------------------
--- Killer Section + Button
+-- Killer "Section"
 ---------------------------------------------------------------------
 
-AnimTab:CreateSection("Killer Anims")
+AnimTab:CreateParagraph({
+    Title = "Killer Anims",
+    Content = ""
+})
 
 AnimTab:CreateButton({
     Name = "Cesus Anims",
