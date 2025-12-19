@@ -442,7 +442,35 @@ AbilitiesTab:CreateButton({
     end
 })
 
-local Tab = Window:CreateTab("Anti", 0) -- Title, Image
+local Tab = Window:CreateTab("Anti & delete", 0) -- Title, Image
+
+local antiTauntEnabled = false
+
+Tab:CreateToggle({
+    Name = "Anti Taunt",
+    CurrentValue = false,
+    Flag = "anti_taunt", -- config saving flag
+    Callback = function(Value)
+        antiTauntEnabled = Value
+
+        if Value then
+            task.spawn(function()
+                while antiTauntEnabled do
+                    local playerGui = LocalPlayer:FindFirstChild("PlayerGui")
+                    if playerGui then
+                        local tauntGui = playerGui:FindFirstChild("Taunt")
+                        if tauntGui then
+                            tauntGui:Destroy()
+                        end
+                    end
+                    task.wait(0.75)
+                end
+            end)
+        end
+    end
+})
+
+local Tab = Window:CreateTab("Blackout Gamemode", 0) -- Title, Image
 
 local Paragraph = Tab:CreateParagraph({Title = "Coming Soon", Content = "Soon"})
 
