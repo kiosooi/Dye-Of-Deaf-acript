@@ -85,150 +85,102 @@ Tab:CreateToggle({
     end
 })
 
--- ===== ESP SECTION =====
+-- ===== ESP (AUTO TEAM CHECK, AUTO UPDATE) =====
 Tab:CreateSection("ESP")
 
-local showHP = true
-local showName = true
 local espEnabled = false
 local espCache = {}
 
--- Helper: get player team
+local function removeESP(plr)
+    if espCache[plr] then
+        espCache[plr]:Destroy()
+        espCache[plr] = nil
+    end
+end
+
 local function getPlayerTeam(plr)
     if workspace.Teams:FindFirstChild("Killers") and workspace.Teams.Killers:FindFirstChild(plr.Name) then
         return "Killer"
-    elseif workspace.Teams:FindFirstChild("Civilians") and workspace.Teams.Civilians:FindFirstChild(plr.Name) then
+    end
+    if workspace.Teams:FindFirstChild("Civilians") and workspace.Teams.Civilians:FindFirstChild(plr.Name) then
         return "Civilian"
     end
     return nil
 end
 
--- Remove ESP
-local function removeESP(plr)
-    if espCache[plr] then
-        if espCache[plr].Billboard then espCache[plr].Billboard:Destroy() end
+local function applyESPToPlayer(plr)
+    if not espEnabled then return end
+    if plr == LocalPlayer then return end
+    if not plr.Character then return end
+
+    removeESP(plr)
+
+    local team = getPlayerTeam(plr)
+    if not team then return end
+
+    local hl = Instance.new("Highlight")
+    hl.Adornee = plr.Character
+    hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+    hl.FillTransparency = 0.35
+    hl.OutlineTransparency = 0
+
+    if team == "Killer" then
+        hl.FillColor = Color3.fromRGB(255, 60, 60)
+        hl.OutlineColor = Color3.fromRGB(255, 0, 0)
+    else
+        hl.FillColor = Color3.fromRGB(60, 255, 60)
+        hl.OutlineColor = Color3.fromRGB(0, 255, 0)
+    end
+
+    hl.Parent = game.CoreGui
+    espCache[plr] = hl
+end
+
+local function refreshESP()
+    for _, plr in ipairs(Players:GetPlayers()) do
+        applyESPToPlayer(plr)
+    end
+end
+
+local function clearESP()
+    for plr, hl in pairs(espCache) do
+        if hl then hl:Destroy() end
         espCache[plr] = nil
     end
 end
 
--- Create ESP for player
-local function createESP(plr)
-    if not plr.Character then return end
-    removeESP(plr)
-
-    local hrp = plr.Character:FindFirstChild("HumanoidRootPart") or plr.Character.PrimaryPart
-    if not hrp then return end
-
-    local billboard = Instance.new("BillboardGui")
-    billboard.Adornee = hrp
-    billboard.Size = UDim2.new(0, 100, 0, 50)
-    billboard.StudsOffset = Vector3.new(0, 3, 0)
-    billboard.AlwaysOnTop = true
-
-    local textLabel = Instance.new("TextLabel")
-    textLabel.Size = UDim2.new(1, 0, 1, 0)
-    textLabel.BackgroundTransparency = 1
-    textLabel.TextStrokeTransparency = 0
-    textLabel.Font = Enum.Font.SourceSansBold
-    textLabel.TextScaled = true
-    textLabel.Parent = billboard
-
-    billboard.Parent = game.CoreGui
-
-    espCache[plr] = {
-        Billboard = billboard,
-        TextLabel = textLabel,
-        Name = plr.Name,
-        HP = plr:FindFirstChild("leaderstats") and plr.leaderstats:FindFirstChild("HP") and plr.leaderstats.HP.Value or 100
-    }
-end
-
--- Update ESP loop
-local function updateESP()
-    for plr, data in pairs(espCache) do
-        if plr.Character then
-            local hrp = plr.Character:FindFirstChild("HumanoidRootPart") or plr.Character.PrimaryPart
-            if hrp and data.Billboard then
-                data.Billboard.Adornee = hrp
-            end
-
-            if plr:FindFirstChild("leaderstats") and plr.leaderstats:FindFirstChild("HP") then
-                data.HP = plr.leaderstats.HP.Value
-            end
-
-            local team = getPlayerTeam(plr)
-            if data.TextLabel then
-                data.TextLabel.TextColor3 = (team == "Killer") and Color3.fromRGB(255,0,0) or Color3.fromRGB(0,255,0)
-                data.TextLabel.Text = (showHP and ("HP: "..data.HP) or "") .. (showHP and showName and " | " or "") .. (showName and data.Name or "")
-            end
-        else
-            removeESP(plr)
-        end
-    end
-end
-
--- Refresh ESP (create for all current players)
-local function refreshESP()
-    for _, plr in ipairs(Players:GetPlayers()) do
-        if plr ~= LocalPlayer and getPlayerTeam(plr) then
-            createESP(plr)
-        end
-    end
-end
-
--- Player events
+-- PLAYER CONNECTIONS
 Players.PlayerAdded:Connect(function(plr)
     plr.CharacterAdded:Connect(function()
         task.wait(0.5)
-        if espEnabled then createESP(plr) end
+        applyESPToPlayer(plr)
     end)
 end)
 
 Players.PlayerRemoving:Connect(removeESP)
 
--- ESP main loop
+-- AUTO REFRESH (TEAM / INVIS / MODEL CHANGES)
 task.spawn(function()
     while true do
         if espEnabled then
             refreshESP()
-            updateESP()
         end
-        task.wait(0.2)
+        task.wait(1)
     end
 end)
 
--- ESP Toggles
+-- ESP TOGGLE
 Tab:CreateToggle({
-    Name = "Enable ESP",
+    Name = "ESP",
     CurrentValue = false,
-    Flag = "esp_main",
+    Flag = "esp",
     Callback = function(Value)
         espEnabled = Value
-        if not espEnabled then
-            for plr, _ in pairs(espCache) do
-                removeESP(plr)
-            end
-        else
+        if Value then
             refreshESP()
+        else
+            clearESP()
         end
-    end
-})
-
-Tab:CreateToggle({
-    Name = "Show HP",
-    CurrentValue = showHP,
-    Flag = "esp_hp",
-    Callback = function(Value)
-        showHP = Value
-    end
-})
-
-Tab:CreateToggle({
-    Name = "Show Name",
-    CurrentValue = showName,
-    Flag = "esp_name",
-    Callback = function(Value)
-        showName = Value
     end
 })
 
