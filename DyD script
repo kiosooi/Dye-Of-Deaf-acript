@@ -86,7 +86,7 @@ Tab:CreateToggle({
 })
 
 -- ===== DYD ESP (HP + Name) =====
-ESPTab:CreateSection("ESP")
+Tab:CreateSection("ESP")
 
 local showHP = true
 local showName = true
@@ -94,7 +94,7 @@ local espEnabled = false
 local espCache = {}
 
 -- TOGGLES (Saved via Config)
-ESPTab:CreateToggle({
+Tab:CreateToggle({
     Name = "Show HP",
     CurrentValue = showHP,
     Flag = "esp_hp",
@@ -108,7 +108,7 @@ ESPTab:CreateToggle({
     end
 })
 
-ESPTab:CreateToggle({
+Tab:CreateToggle({
     Name = "Show Name",
     CurrentValue = showName,
     Flag = "esp_name",
@@ -122,92 +122,7 @@ ESPTab:CreateToggle({
     end
 })
 
-local function getPlayerTeam(plr)
-    if workspace.Teams:FindFirstChild("Killers") and workspace.Teams.Killers:FindFirstChild(plr.Name) then
-        return "Killer"
-    elseif workspace.Teams:FindFirstChild("Civilians") and workspace.Teams.Civilians:FindFirstChild(plr.Name) then
-        return "Civilian"
-    end
-    return nil
-end
-
-local function removeESP(plr)
-    if espCache[plr] then
-        if espCache[plr].Billboard then espCache[plr].Billboard:Destroy() end
-        espCache[plr] = nil
-    end
-end
-
-local function createESP(plr)
-    if not plr.Character then return end
-    removeESP(plr)
-
-    local billboard = Instance.new("BillboardGui")
-    billboard.Adornee = plr.Character:FindFirstChild("HumanoidRootPart") or plr.Character.PrimaryPart
-    billboard.Size = UDim2.new(0, 100, 0, 50)
-    billboard.StudsOffset = Vector3.new(0, 3, 0)
-    billboard.AlwaysOnTop = true
-
-    local textLabel = Instance.new("TextLabel")
-    textLabel.Size = UDim2.new(1, 0, 1, 0)
-    textLabel.BackgroundTransparency = 1
-    textLabel.TextColor3 = getPlayerTeam(plr) == "Killer" and Color3.fromRGB(255, 0, 0) or Color3.fromRGB(0, 255, 0)
-    textLabel.TextStrokeTransparency = 0
-    textLabel.Font = Enum.Font.SourceSansBold
-    textLabel.TextScaled = true
-    textLabel.Parent = billboard
-
-    billboard.Parent = game.CoreGui
-
-    espCache[plr] = {
-        Billboard = billboard,
-        TextLabel = textLabel,
-        Name = plr.Name,
-        HP = plr:FindFirstChild("leaderstats") and plr.leaderstats:FindFirstChild("HP") and plr.leaderstats.HP.Value or 100
-    }
-end
-
-local function updateESP()
-    for plr, data in pairs(espCache) do
-        if plr.Character and plr:FindFirstChild("leaderstats") and plr.leaderstats:FindFirstChild("HP") then
-            data.HP = plr.leaderstats.HP.Value
-        end
-        if data.TextLabel then
-            data.TextLabel.Text = (showHP and ("HP: "..data.HP) or "") .. (showHP and showName and " | " or "") .. (showName and data.Name or "")
-        end
-    end
-end
-
-local function refreshESP()
-    for _, plr in ipairs(Players:GetPlayers()) do
-        if plr ~= LocalPlayer and getPlayerTeam(plr) then
-            createESP(plr)
-        end
-    end
-end
-
-Players.PlayerAdded:Connect(function(plr)
-    plr.CharacterAdded:Connect(function()
-        task.wait(0.5)
-        if espEnabled then createESP(plr) end
-    end)
-end)
-
-Players.PlayerRemoving:Connect(removeESP)
-
--- Main ESP loop
-task.spawn(function()
-    while true do
-        if espEnabled then
-            refreshESP()
-            updateESP()
-        end
-        task.wait(0.2)
-    end
-end)
-
--- ESP Toggle
-ESPTab:CreateToggle({
+Tab:CreateToggle({
     Name = "Enable ESP",
     CurrentValue = false,
     Flag = "esp_main",
