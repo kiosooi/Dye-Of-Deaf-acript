@@ -759,10 +759,8 @@ end
 -- Civilian "Section"
 ---------------------------------------------------------------------
 
-AnimTab:CreateParagraph({
-    Title = "Civilian Anims",
-    Content = ""
-})
+
+AnimTab:CreateSection("Civilian Anims")
 
 AnimTab:CreateButton({
     Name = "Default Civilian Anims",
@@ -779,10 +777,7 @@ AnimTab:CreateButton({
 -- Killer "Section"
 ---------------------------------------------------------------------
 
-AnimTab:CreateParagraph({
-    Title = "Killer Anims",
-    Content = ""
-})
+AnimTab:CreateSection("Killer Anims")
 
 AnimTab:CreateButton({
     Name = "Cesus Anims",
