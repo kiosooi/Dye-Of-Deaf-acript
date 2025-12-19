@@ -726,52 +726,57 @@ Tab:CreateToggle({
 
 local AnimTab = Window:CreateTab("Animations", 0)
 
--- Helper to get your character from Teams folder
-local function getTeamCharacter()
-    local teams = workspace:FindFirstChild("Teams")
-    if not teams then return nil end
+-- Helper function to find your model in Teams
+local function getMyModel()
+    local plrName = LocalPlayer.Name
+    local civFolder = workspace:FindFirstChild("Teams") and workspace.Teams:FindFirstChild("Civilians")
+    local killerFolder = workspace:FindFirstChild("Teams") and workspace.Teams:FindFirstChild("Killers")
 
-    if teams:FindFirstChild("Civilians") and teams.Civilians:FindFirstChild(LocalPlayer.Name) then
-        return teams.Civilians[LocalPlayer.Name]
-    elseif teams:FindFirstChild("Killers") and teams.Killers:FindFirstChild(LocalPlayer.Name) then
-        return teams.Killers[LocalPlayer.Name]
+    if civFolder and civFolder:FindFirstChild(plrName) then
+        return civFolder[plrName]
+    elseif killerFolder and killerFolder:FindFirstChild(plrName) then
+        return killerFolder[plrName]
+    else
+        return nil
     end
-    return nil
 end
 
--- Apply animations to your character
-local function applyAnimations(walkId, runId, idleId)
-    local char = getTeamCharacter()
+-- Helper to apply animations to a model (works with morphs)
+local function applyAnimationsToModel(char, walkId, runId, idleId)
     if not char then return end
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    if not hum then return end
 
-    local animate = char:FindFirstChild("Animate")
-    if not animate then return end
-
-    local function setAnim(folderName, animId)
-        local folder = animate:FindFirstChild(folderName)
-        if folder then
-            for _, anim in ipairs(folder:GetChildren()) do
-                if anim:IsA("Animation") then
-                    anim.AnimationId = animId
-                end
-            end
+    -- Stop previous animations
+    if char._animTracks then
+        for _, track in pairs(char._animTracks) do
+            track:Stop()
         end
     end
+    char._animTracks = {}
 
-    -- These are the standard folder names inside Animate
-    setAnim("walk", walkId)
-    setAnim("run", runId)
-    setAnim("idle", idleId)
-
-    -- Force humanoid to reload animation
-    local hum = char:FindFirstChildOfClass("Humanoid")
-    if hum then
-        hum:ChangeState(Enum.HumanoidStateType.Landed)
+    -- Ensure Animator exists
+    local animator = hum:FindFirstChildOfClass("Animator")
+    if not animator then
+        animator = Instance.new("Animator")
+        animator.Parent = hum
     end
+
+    local function playAnim(animId)
+        local anim = Instance.new("Animation")
+        anim.AnimationId = animId
+        local track = animator:LoadAnimation(anim)
+        track:Play()
+        table.insert(char._animTracks, track)
+    end
+
+    playAnim(walkId)
+    playAnim(runId)
+    playAnim(idleId)
 end
 
 ---------------------------------------------------------------------
--- Civilian "Section"
+-- Civilian Anims Section
 ---------------------------------------------------------------------
 
 AnimTab:CreateSection("Civilian Anims")
@@ -779,16 +784,20 @@ AnimTab:CreateSection("Civilian Anims")
 AnimTab:CreateButton({
     Name = "Default Civilian Anims",
     Callback = function()
-        applyAnimations(
-            "rbxassetid://75239313204813",     -- walk
-            "rbxassetid://130990312984647",    -- run
-            "rbxassetid://92783975175163"      -- idle
-        )
+        local model = getMyModel()
+        if model then
+            applyAnimationsToModel(
+                model,
+                "rbxassetid://75239313204813",     -- walk
+                "rbxassetid://130990312984647",    -- run
+                "rbxassetid://92783975175163"      -- idle
+            )
+        end
     end
 })
 
 ---------------------------------------------------------------------
--- Killer "Section"
+-- Killer Anims Section
 ---------------------------------------------------------------------
 
 AnimTab:CreateSection("Killer Anims")
@@ -796,11 +805,15 @@ AnimTab:CreateSection("Killer Anims")
 AnimTab:CreateButton({
     Name = "Cesus Anims",
     Callback = function()
-        applyAnimations(
-            "rbxassetid://117654347067459",    -- walk
-            "rbxassetid://72317609161583",     -- run
-            "rbxassetid://128292875052824"     -- idle
-        )
+        local model = getMyModel()
+        if model then
+            applyAnimationsToModel(
+                model,
+                "rbxassetid://117654347067459",    -- walk
+                "rbxassetid://72317609161583",     -- run
+                "rbxassetid://128292875052824"     -- idle
+            )
+        end
     end
 })
 
