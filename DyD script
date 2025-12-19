@@ -477,7 +477,7 @@ AbilitiesTab:CreateToggle({
                             cardPick:Destroy()
                         end
                     end
-                    task.wait(1)
+                    task.wait(0.11)
                 end
             end)
         end
@@ -576,7 +576,7 @@ Tab:CreateToggle({
                             tauntGui:Destroy()
                         end
                     end
-                    task.wait(0.75)
+                    task.wait(0.11)
                 end
             end)
         end
@@ -602,7 +602,7 @@ Tab:CreateToggle({
                             diedGui:Destroy()
                         end
                     end
-                    task.wait(0.75)
+                    task.wait(0.11)
                 end
             end)
         end
