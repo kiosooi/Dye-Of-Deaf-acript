@@ -184,7 +184,7 @@ Tab:CreateToggle({
     end
 })
 
--- ===== NAME + HP ESP =====
+-- ===== NAME + HP ESP (TEAM BASED, REAL HEALTH) =====
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -195,10 +195,37 @@ local hpESPEnabled = false
 
 local espCache = {}
 
--- Helper: build text
+-- Team + Stats lookup
+local function getTeamAndHealth(plr)
+    local teams = workspace:FindFirstChild("Teams")
+    if not teams then return nil, nil end
+
+    local killers = teams:FindFirstChild("Killers")
+    local civilians = teams:FindFirstChild("Civilians")
+
+    local folder
+    local teamType
+
+    if killers and killers:FindFirstChild(plr.Name) then
+        folder = killers[plr.Name]
+        teamType = "Killer"
+    elseif civilians and civilians:FindFirstChild(plr.Name) then
+        folder = civilians[plr.Name]
+        teamType = "Civilian"
+    end
+
+    if not folder then return nil, nil end
+
+    local stats = folder:FindFirstChild("Stats")
+    local healthValue = stats and stats:FindFirstChild("Health")
+
+    return teamType, healthValue and healthValue.Value or nil
+end
+
+-- Build ESP text
 local function buildText(plr)
-    local humanoid = plr.Character and plr.Character:FindFirstChildOfClass("Humanoid")
-    local hpText = humanoid and ("HP: " .. math.floor(humanoid.Health)) or "HP: ?"
+    local _, hp = getTeamAndHealth(plr)
+    local hpText = hp and ("HP: " .. math.floor(hp)) or "HP: ?"
     local nameText = plr.Name
 
     if nameESPEnabled and hpESPEnabled then
@@ -228,22 +255,32 @@ local function createESP(plr)
     local hrp = plr.Character:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
 
+    local teamType = getTeamAndHealth(plr)
+    if not teamType then return end
+
     removeESP(plr)
 
     local billboard = Instance.new("BillboardGui")
     billboard.Name = "NameHpESP"
     billboard.Adornee = hrp
-    billboard.Size = UDim2.new(0, 200, 0, 50)
+    billboard.Size = UDim2.new(0, 220, 0, 50)
     billboard.StudsOffset = Vector3.new(0, 3, 0)
     billboard.AlwaysOnTop = true
 
     local label = Instance.new("TextLabel")
     label.Size = UDim2.new(1, 0, 1, 0)
     label.BackgroundTransparency = 1
-    label.TextColor3 = Color3.new(1, 1, 1)
     label.TextStrokeTransparency = 0
     label.TextScaled = true
     label.Font = Enum.Font.SourceSansBold
+
+    -- Team colors
+    if teamType == "Killer" then
+        label.TextColor3 = Color3.fromRGB(255, 60, 60)
+    else
+        label.TextColor3 = Color3.fromRGB(60, 255, 60)
+    end
+
     label.Text = buildText(plr)
     label.Parent = billboard
 
@@ -251,10 +288,10 @@ local function createESP(plr)
     espCache[plr] = billboard
 end
 
--- Refresh ESPs
-local function refreshAllESP()
+-- Refresh all ESP
+local function refreshESP()
     for _, plr in ipairs(Players:GetPlayers()) do
-        if (nameESPEnabled or hpESPEnabled) then
+        if nameESPEnabled or hpESPEnabled then
             createESP(plr)
         else
             removeESP(plr)
@@ -262,11 +299,12 @@ local function refreshAllESP()
     end
 end
 
--- Update text every frame (HP changes)
+-- Live update (HP changes)
 RunService.Heartbeat:Connect(function()
     for plr, gui in pairs(espCache) do
-        if gui and gui:FindFirstChildOfClass("TextLabel") then
-            gui.TextLabel.Text = buildText(plr)
+        local label = gui:FindFirstChildOfClass("TextLabel")
+        if label then
+            label.Text = buildText(plr)
         end
     end
 end)
@@ -291,7 +329,7 @@ Tab:CreateToggle({
     Flag = "name_esp",
     Callback = function(Value)
         nameESPEnabled = Value
-        refreshAllESP()
+        refreshESP()
     end
 })
 
@@ -301,7 +339,7 @@ Tab:CreateToggle({
     Flag = "hp_esp",
     Callback = function(Value)
         hpESPEnabled = Value
-        refreshAllESP()
+        refreshESP()
     end
 })
 
