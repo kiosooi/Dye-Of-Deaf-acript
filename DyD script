@@ -726,9 +726,6 @@ Tab:CreateToggle({
 
 local AnimTab = Window:CreateTab("Animations", 0)
 
-AnimTab:CreateSection("Civilian Anims")
-AnimTab:CreateSection("Killer Anims")
-
 -- Helper to apply animations
 local function applyAnimations(walkId, runId, idleId)
     local char = LocalPlayer.Character
@@ -764,7 +761,7 @@ local function applyAnimations(walkId, runId, idleId)
         end
     end
 
-    -- Force reload animations
+    -- Force animation refresh
     local humanoid = char:FindFirstChildOfClass("Humanoid")
     if humanoid then
         humanoid:ChangeState(Enum.HumanoidStateType.Landed)
@@ -772,8 +769,10 @@ local function applyAnimations(walkId, runId, idleId)
 end
 
 ---------------------------------------------------------------------
--- Civilian Anim Button
+-- Civilian Section + Button
 ---------------------------------------------------------------------
+
+AnimTab:CreateSection("Civilian Anims")
 
 AnimTab:CreateButton({
     Name = "Default Civilian Anims",
@@ -787,8 +786,10 @@ AnimTab:CreateButton({
 })
 
 ---------------------------------------------------------------------
--- Killer Anim Button
+-- Killer Section + Button
 ---------------------------------------------------------------------
+
+AnimTab:CreateSection("Killer Anims")
 
 AnimTab:CreateButton({
     Name = "Cesus Anims",
