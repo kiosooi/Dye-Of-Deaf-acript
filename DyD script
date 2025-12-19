@@ -720,6 +720,87 @@ Tab:CreateToggle({
     end
 })
 
+---------------------------------------------------------------------
+-- ===== ANIMATIONS TAB =====
+---------------------------------------------------------------------
+
+local AnimTab = Window:CreateTab("Animations", 0)
+
+AnimTab:CreateSection("Civilian Anims")
+AnimTab:CreateSection("Killer Anims")
+
+-- Helper to apply animations
+local function applyAnimations(walkId, runId, idleId)
+    local char = LocalPlayer.Character
+    if not char then return end
+
+    local animate = char:FindFirstChild("Animate")
+    if not animate then return end
+
+    -- Walk
+    if animate:FindFirstChild("walk") then
+        for _, anim in ipairs(animate.walk:GetChildren()) do
+            if anim:IsA("Animation") then
+                anim.AnimationId = walkId
+            end
+        end
+    end
+
+    -- Run
+    if animate:FindFirstChild("run") then
+        for _, anim in ipairs(animate.run:GetChildren()) do
+            if anim:IsA("Animation") then
+                anim.AnimationId = runId
+            end
+        end
+    end
+
+    -- Idle
+    if animate:FindFirstChild("idle") then
+        for _, anim in ipairs(animate.idle:GetChildren()) do
+            if anim:IsA("Animation") then
+                anim.AnimationId = idleId
+            end
+        end
+    end
+
+    -- Force reload animations
+    local humanoid = char:FindFirstChildOfClass("Humanoid")
+    if humanoid then
+        humanoid:ChangeState(Enum.HumanoidStateType.Landed)
+    end
+end
+
+---------------------------------------------------------------------
+-- Civilian Anim Button
+---------------------------------------------------------------------
+
+AnimTab:CreateButton({
+    Name = "Default Civilian Anims",
+    Callback = function()
+        applyAnimations(
+            "rbxassetid://75239313204813",     -- walk
+            "rbxassetid://130990312984647",    -- run
+            "rbxassetid://92783975175163"      -- idle
+        )
+    end
+})
+
+---------------------------------------------------------------------
+-- Killer Anim Button
+---------------------------------------------------------------------
+
+AnimTab:CreateButton({
+    Name = "Cesus Anims",
+    Callback = function()
+        applyAnimations(
+            "rbxassetid://117654347067459",    -- walk
+            "rbxassetid://72317609161583",     -- run
+            "rbxassetid://128292875052824"     -- idle
+        )
+    end
+})
+
 local Tab = Window:CreateTab("Misc", 0) -- Title, Image
 
 local Button = Tab:CreateButton({
