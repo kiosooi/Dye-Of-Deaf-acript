@@ -726,52 +726,50 @@ Tab:CreateToggle({
 
 local AnimTab = Window:CreateTab("Animations", 0)
 
--- Helper to get your character
+-- Helper to get your character (team folders or lobby)
 local function getLocalCharacter()
-    -- First check team folders
     if workspace.Teams:FindFirstChild("Civilians") and workspace.Teams.Civilians:FindFirstChild(LocalPlayer.Name) then
         return workspace.Teams.Civilians:FindFirstChild(LocalPlayer.Name)
     elseif workspace.Teams:FindFirstChild("Killers") and workspace.Teams.Killers:FindFirstChild(LocalPlayer.Name) then
         return workspace.Teams.Killers:FindFirstChild(LocalPlayer.Name)
     end
 
-    -- Fallback: check if LocalPlayer.Character exists (for lobby)
-    if LocalPlayer.Character then
-        return LocalPlayer.Character
-    end
-
-    return nil
+    -- fallback
+    return LocalPlayer.Character
 end
 
--- Helper to apply animations
+-- Wait until Animate script exists
+local function waitForAnimate(char)
+    if not char then return nil end
+    local animate = char:WaitForChild("Animate", 5)
+    return animate
+end
+
+-- Apply animations
 local function applyAnimations(walkId, runId, idleId)
     local char = getLocalCharacter()
     if not char then return end
 
-    local animate = char:FindFirstChild("Animate")
+    local animate = waitForAnimate(char)
     if not animate then return end
 
-    local function setFolderAnims(folderName, animId)
+    local folders = {"walk","run","idle","Walk","Run","Idle"} -- covers possible names
+    local ids = {walkId, runId, idleId, walkId, runId, idleId}
+
+    for i, folderName in ipairs(folders) do
         local folder = animate:FindFirstChild(folderName)
         if folder then
             for _, anim in ipairs(folder:GetChildren()) do
                 if anim:IsA("Animation") then
-                    anim.AnimationId = animId
+                    anim.AnimationId = ids[i]
                 end
             end
         end
     end
 
-    -- Apply to standard and capitalized folders
-    setFolderAnims("walk", walkId)
-    setFolderAnims("run", runId)
-    setFolderAnims("idle", idleId)
-    setFolderAnims("Walk", walkId)
-    setFolderAnims("Run", runId)
-    setFolderAnims("Idle", idleId)
-
     local hum = char:FindFirstChildOfClass("Humanoid")
     if hum then
+        hum:LoadAnimation(char:FindFirstChildOfClass("Animation") or Instance.new("Animation")) -- force reload
         hum:ChangeState(Enum.HumanoidStateType.Landed)
     end
 end
