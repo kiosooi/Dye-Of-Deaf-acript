@@ -676,6 +676,36 @@ Tab:CreateToggle({
     end
 })
 
+local antiArtlessEnabled = false
+
+Tab:CreateToggle({
+    Name = "Anti Artless wall",
+    CurrentValue = false,
+    Flag = "anti_artless_wall",
+    Callback = function(Value)
+        antiArtlessEnabled = Value
+
+        if Value then
+            task.spawn(function()
+                while antiArtlessEnabled do
+                    local artlessFolder = workspace:FindFirstChild("Residue") 
+                        and workspace.Residue:FindFirstChild("ArtlessWall")
+                    if artlessFolder then
+                        for _, part in pairs(artlessFolder:GetChildren()) do
+                            if part:IsA("BasePart") and part.Name:sub(1,5) == "Wall_" then
+                                pcall(function()
+                                    part.CanCollide = false
+                                end)
+                            end
+                        end
+                    end
+                    task.wait(1)
+                end
+            end)
+        end
+    end
+})
+
 local Tab = Window:CreateTab("Blackout Gamemode", 0) -- Title, Image
 
 local aiESPEnabled = false
