@@ -676,29 +676,35 @@ Tab:CreateToggle({
     end
 })
 
-local antiArtlessEnabled = false
+local antiArtlessWallEnabled = false
 
 Tab:CreateToggle({
     Name = "Anti Artless wall",
     CurrentValue = false,
     Flag = "anti_artless_wall",
     Callback = function(Value)
-        antiArtlessEnabled = Value
+        antiArtlessWallEnabled = Value
 
         if Value then
             task.spawn(function()
-                while antiArtlessEnabled do
-                    local artlessFolder = workspace:FindFirstChild("Residue") 
-                        and workspace.Residue:FindFirstChild("ArtlessWall")
-                    if artlessFolder then
-                        for _, part in pairs(artlessFolder:GetChildren()) do
-                            if part:IsA("BasePart") and part.Name:sub(1,5) == "Wall_" then
-                                pcall(function()
-                                    part.CanCollide = false
-                                end)
+                while antiArtlessWallEnabled do
+                    local residue = workspace:FindFirstChild("Residue")
+                    local artlessWall = residue and residue:FindFirstChild("ArtlessWall")
+
+                    if artlessWall then
+                        for _, obj in ipairs(artlessWall:GetChildren()) do
+                            -- match Wall_<playername>
+                            if obj.Name:sub(1, 5) == "Wall_" then
+                                -- disable collision on EVERYTHING inside
+                                for _, descendant in ipairs(obj:GetDescendants()) do
+                                    if descendant:IsA("BasePart") then
+                                        descendant.CanCollide = false
+                                    end
+                                end
                             end
                         end
                     end
+
                     task.wait(1)
                 end
             end)
