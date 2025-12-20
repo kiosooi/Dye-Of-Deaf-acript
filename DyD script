@@ -721,114 +721,141 @@ Tab:CreateToggle({
 })
 
 ---------------------------------------------------------------------
--- ===== ANIMATIONS TAB =====
+-- ===== ANIMATIONS TAB (FIXED, GAME-COMPATIBLE) =====
 ---------------------------------------------------------------------
 
 local AnimTab = Window:CreateTab("Animations", 0)
 
--- Helper function to find your model in Teams
+AnimTab:CreateSection("Civilian Anims")
+AnimTab:CreateSection("Killer Anims")
+
+-- animation state storage
+local activeAnimSet = nil
+local animConnection = nil
+local loadedTracks = {}
+
+-- find your morph model (Civilian / Killer)
 local function getMyModel()
-    local plrName = LocalPlayer.Name
-    local civFolder = workspace:FindFirstChild("Teams") and workspace.Teams:FindFirstChild("Civilians")
-    local killerFolder = workspace:FindFirstChild("Teams") and workspace.Teams:FindFirstChild("Killers")
+    local teams = workspace:FindFirstChild("Teams")
+    if not teams then return end
 
-    if civFolder and civFolder:FindFirstChild(plrName) then
-        return civFolder[plrName]
-    elseif killerFolder and killerFolder:FindFirstChild(plrName) then
-        return killerFolder[plrName]
-    else
-        return nil
-    end
-end
-
--- Helper to find Humanoid recursively
-local function findHumanoid(model)
-    if not model then return nil end
-    for _, obj in pairs(model:GetDescendants()) do
-        if obj:IsA("Humanoid") then
-            return obj
+    for _, folderName in ipairs({ "Civilians", "Killers" }) do
+        local folder = teams:FindFirstChild(folderName)
+        if folder and folder:FindFirstChild(LocalPlayer.Name) then
+            return folder[LocalPlayer.Name]
         end
     end
-    return nil
 end
 
--- Helper to apply animations to a model safely
-local function applyAnimationsToModel(char, walkId, runId, idleId)
-    if not char then return end
-    local hum = findHumanoid(char)
+-- find humanoid anywhere inside morph
+local function getHumanoid(model)
+    for _, v in ipairs(model:GetDescendants()) do
+        if v:IsA("Humanoid") then
+            return v
+        end
+    end
+end
+
+-- stop and clean animations
+local function clearAnimations()
+    if animConnection then
+        animConnection:Disconnect()
+        animConnection = nil
+    end
+    for _, track in pairs(loadedTracks) do
+        pcall(function() track:Stop(0.15) end)
+    end
+    table.clear(loadedTracks)
+end
+
+-- core animation loader (THIS is the important part)
+local function applyAnimSet(walkId, runId, idleId)
+    clearAnimations()
+
+    local model = getMyModel()
+    if not model then return end
+
+    local hum = getHumanoid(model)
     if not hum then return end
 
-    -- Stop previous tracks
-    if char._animTracks then
-        for _, track in pairs(char._animTracks) do
-            pcall(function() track:Stop() end)
-        end
-    end
-    char._animTracks = {}
-
-    -- Ensure Animator exists
     local animator = hum:FindFirstChildOfClass("Animator")
     if not animator then
-        animator = Instance.new("Animator")
-        animator.Parent = hum
+        animator = Instance.new("Animator", hum)
     end
 
-    local function playAnim(animId)
-        pcall(function()
-            local anim = Instance.new("Animation")
-            anim.AnimationId = animId
-            local track = animator:LoadAnimation(anim)
-            track:Play()
-            table.insert(char._animTracks, track)
-        end)
+    local function load(id, priority)
+        local anim = Instance.new("Animation")
+        anim.AnimationId = id
+        local track = animator:LoadAnimation(anim)
+        track.Priority = priority
+        return track
     end
 
-    playAnim(walkId)
-    playAnim(runId)
-    playAnim(idleId)
+    loadedTracks.Idle = load(idleId, Enum.AnimationPriority.Core)
+    loadedTracks.Walk = load(walkId, Enum.AnimationPriority.Movement)
+    loadedTracks.Run  = load(runId, Enum.AnimationPriority.Movement)
+
+    loadedTracks.Idle:Play(0.2)
+
+    animConnection = RunService.RenderStepped:Connect(function()
+        local moving = hum.MoveDirection.Magnitude > 0.1
+        local sprinting = hum.WalkSpeed > 18
+
+        local desired =
+            (not moving and loadedTracks.Idle)
+            or (sprinting and loadedTracks.Run)
+            or loadedTracks.Walk
+
+        for _, track in pairs(loadedTracks) do
+            if track ~= desired and track.IsPlaying then
+                track:Stop(0.15)
+            end
+        end
+
+        if desired and not desired.IsPlaying then
+            desired:Play(0.15)
+        end
+    end)
 end
 
 ---------------------------------------------------------------------
--- Civilian Anims Section
+-- BUTTONS
 ---------------------------------------------------------------------
 
-AnimTab:CreateSection("Civilian Anims")
-
+-- Civilian
 AnimTab:CreateButton({
     Name = "Default Civilian Anims",
     Callback = function()
-        local model = getMyModel()
-        if model then
-            applyAnimationsToModel(
-                model,
-                "rbxassetid://75239313204813",     -- walk
-                "rbxassetid://130990312984647",    -- run
-                "rbxassetid://92783975175163"      -- idle
-            )
-        end
+        applyAnimSet(
+            "rbxassetid://75239313204813",   -- walk
+            "rbxassetid://130990312984647",  -- run
+            "rbxassetid://92783975175163"    -- idle
+        )
     end
 })
 
----------------------------------------------------------------------
--- Killer Anims Section
----------------------------------------------------------------------
-
-AnimTab:CreateSection("Killer Anims")
-
+-- Killer
 AnimTab:CreateButton({
     Name = "Cesus Anims",
     Callback = function()
-        local model = getMyModel()
-        if model then
-            applyAnimationsToModel(
-                model,
-                "rbxassetid://117654347067459",    -- walk
-                "rbxassetid://72317609161583",     -- run
-                "rbxassetid://128292875052824"     -- idle
-            )
-        end
+        applyAnimSet(
+            "rbxassetid://117654347067459",  -- walk
+            "rbxassetid://72317609161583",   -- run
+            "rbxassetid://128292875052824"   -- idle
+        )
     end
 })
+
+---------------------------------------------------------------------
+-- REAPPLY ON RESPAWN
+---------------------------------------------------------------------
+
+LocalPlayer.CharacterAdded:Connect(function()
+    task.wait(0.6)
+    if activeAnimSet then
+        activeAnimSet()
+    end
+end)
 
 local Tab = Window:CreateTab("Misc", 0) -- Title, Image
 
