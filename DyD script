@@ -727,7 +727,6 @@ Tab:CreateToggle({
 local AnimTab = Window:CreateTab("Animations", 0)
 
 AnimTab:CreateSection("Civilian Anims")
-AnimTab:CreateSection("Killer Anims")
 
 -- animation state storage
 local activeAnimSet = nil
@@ -833,6 +832,8 @@ AnimTab:CreateButton({
         )
     end
 })
+
+AnimTab:CreateSection("Killer Anims")
 
 -- Killer
 AnimTab:CreateButton({
