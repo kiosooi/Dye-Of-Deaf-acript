@@ -741,16 +741,27 @@ local function getMyModel()
     end
 end
 
--- Helper to apply animations to a model (works with morphs)
+-- Helper to find Humanoid recursively
+local function findHumanoid(model)
+    if not model then return nil end
+    for _, obj in pairs(model:GetDescendants()) do
+        if obj:IsA("Humanoid") then
+            return obj
+        end
+    end
+    return nil
+end
+
+-- Helper to apply animations to a model safely
 local function applyAnimationsToModel(char, walkId, runId, idleId)
     if not char then return end
-    local hum = char:FindFirstChildOfClass("Humanoid")
+    local hum = findHumanoid(char)
     if not hum then return end
 
-    -- Stop previous animations
+    -- Stop previous tracks
     if char._animTracks then
         for _, track in pairs(char._animTracks) do
-            track:Stop()
+            pcall(function() track:Stop() end)
         end
     end
     char._animTracks = {}
@@ -763,11 +774,13 @@ local function applyAnimationsToModel(char, walkId, runId, idleId)
     end
 
     local function playAnim(animId)
-        local anim = Instance.new("Animation")
-        anim.AnimationId = animId
-        local track = animator:LoadAnimation(anim)
-        track:Play()
-        table.insert(char._animTracks, track)
+        pcall(function()
+            local anim = Instance.new("Animation")
+            anim.AnimationId = animId
+            local track = animator:LoadAnimation(anim)
+            track:Play()
+            table.insert(char._animTracks, track)
+        end)
     end
 
     playAnim(walkId)
