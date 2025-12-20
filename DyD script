@@ -184,18 +184,14 @@ Tab:CreateToggle({
     end
 })
 
--- ===== NAME + HP ESP (TEAM BASED, REAL HEALTH) =====
-
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local LocalPlayer = Players.LocalPlayer
+-- ===== NAME + HP ESP (ROUND-PERSISTENT) =====
 
 local nameESPEnabled = false
 local hpESPEnabled = false
 
-local espCache = {}
+local textEspCache = {}
 
--- Team + Stats lookup
+-- Team + Health lookup
 local function getTeamAndHealth(plr)
     local teams = workspace:FindFirstChild("Teams")
     if not teams then return nil, nil end
@@ -222,43 +218,43 @@ local function getTeamAndHealth(plr)
     return teamType, healthValue and healthValue.Value or nil
 end
 
--- Build ESP text
+-- Build the display text
 local function buildText(plr)
     local _, hp = getTeamAndHealth(plr)
     local hpText = hp and ("HP: " .. math.floor(hp)) or "HP: ?"
-    local nameText = plr.Name
 
     if nameESPEnabled and hpESPEnabled then
-        return hpText .. " | " .. nameText
+        return hpText .. " | " .. plr.Name
     elseif hpESPEnabled then
         return hpText
     elseif nameESPEnabled then
-        return nameText
+        return plr.Name
     end
 
     return ""
 end
 
 -- Remove ESP
-local function removeESP(plr)
-    if espCache[plr] then
-        espCache[plr]:Destroy()
-        espCache[plr] = nil
+local function removeTextESP(plr)
+    if textEspCache[plr] then
+        textEspCache[plr]:Destroy()
+        textEspCache[plr] = nil
     end
 end
 
--- Create ESP
-local function createESP(plr)
+-- Create or refresh ESP for a player
+local function createTextESP(plr)
+    if not (nameESPEnabled or hpESPEnabled) then return end
     if plr == LocalPlayer then return end
     if not plr.Character then return end
 
     local hrp = plr.Character:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
 
-    local teamType = getTeamAndHealth(plr)
+    local teamType = select(1, getTeamAndHealth(plr))
     if not teamType then return end
 
-    removeESP(plr)
+    removeTextESP(plr)
 
     local billboard = Instance.new("BillboardGui")
     billboard.Name = "NameHpESP"
@@ -274,34 +270,42 @@ local function createESP(plr)
     label.TextScaled = true
     label.Font = Enum.Font.SourceSansBold
 
-    -- Team colors
-    if teamType == "Killer" then
-        label.TextColor3 = Color3.fromRGB(255, 60, 60)
-    else
-        label.TextColor3 = Color3.fromRGB(60, 255, 60)
-    end
+    label.TextColor3 = teamType == "Killer"
+        and Color3.fromRGB(255, 60, 60)
+        or Color3.fromRGB(60, 255, 60)
 
     label.Text = buildText(plr)
     label.Parent = billboard
 
     billboard.Parent = game.CoreGui
-    espCache[plr] = billboard
+    textEspCache[plr] = billboard
 end
 
--- Refresh all ESP
-local function refreshESP()
+-- Refresh ESP for all players
+local function refreshTextESP()
     for _, plr in ipairs(Players:GetPlayers()) do
-        if nameESPEnabled or hpESPEnabled then
-            createESP(plr)
-        else
-            removeESP(plr)
-        end
+        createTextESP(plr)
     end
 end
 
--- Live update (HP changes)
+-- Character respawn handling
+local function hookPlayer(plr)
+    plr.CharacterAdded:Connect(function()
+        task.wait(0.5)
+        createTextESP(plr)
+    end)
+end
+
+for _, plr in ipairs(Players:GetPlayers()) do
+    hookPlayer(plr)
+end
+
+Players.PlayerAdded:Connect(hookPlayer)
+Players.PlayerRemoving:Connect(removeTextESP)
+
+-- Live HP / name update
 RunService.Heartbeat:Connect(function()
-    for plr, gui in pairs(espCache) do
+    for plr, gui in pairs(textEspCache) do
         local label = gui:FindFirstChildOfClass("TextLabel")
         if label then
             label.Text = buildText(plr)
@@ -309,27 +313,24 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
--- Player events
-Players.PlayerAdded:Connect(function(plr)
-    plr.CharacterAdded:Connect(function()
-        task.wait(0.5)
+-- Safety refresh loop
+task.spawn(function()
+    while true do
         if nameESPEnabled or hpESPEnabled then
-            createESP(plr)
+            refreshTextESP()
         end
-    end)
+        task.wait(1)
+    end
 end)
 
-Players.PlayerRemoving:Connect(removeESP)
-
 -- ===== TOGGLES =====
-
 Tab:CreateToggle({
     Name = "Name ESP",
     CurrentValue = false,
     Flag = "name_esp",
     Callback = function(Value)
         nameESPEnabled = Value
-        refreshESP()
+        refreshTextESP()
     end
 })
 
@@ -339,7 +340,7 @@ Tab:CreateToggle({
     Flag = "hp_esp",
     Callback = function(Value)
         hpESPEnabled = Value
-        refreshESP()
+        refreshTextESP()
     end
 })
 
