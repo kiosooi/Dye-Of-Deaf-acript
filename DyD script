@@ -732,13 +732,15 @@ local function getMyModel()
     local civFolder = workspace:FindFirstChild("Teams") and workspace.Teams:FindFirstChild("Civilians")
     local killerFolder = workspace:FindFirstChild("Teams") and workspace.Teams:FindFirstChild("Killers")
 
-    if civFolder and civFolder:FindFirstChild(plrName) then
-        return civFolder[plrName]
-    elseif killerFolder and killerFolder:FindFirstChild(plrName) then
-        return killerFolder[plrName]
-    else
-        return nil
+    local model
+    if civFolder then
+        model = civFolder:FindFirstChild(plrName)
     end
+    if not model and killerFolder then
+        model = killerFolder:FindFirstChild(plrName)
+    end
+
+    return model
 end
 
 -- Helper to find Humanoid recursively
@@ -752,7 +754,7 @@ local function findHumanoid(model)
     return nil
 end
 
--- Helper to apply animations to a model safely
+-- Apply animations safely
 local function applyAnimationsToModel(char, walkId, runId, idleId)
     if not char then return end
     local hum = findHumanoid(char)
@@ -773,46 +775,44 @@ local function applyAnimationsToModel(char, walkId, runId, idleId)
         animator.Parent = hum
     end
 
-    -- Function to load animation
-    local function load(animId, priority)
+    local function loadAnim(animId, priority)
         local track
         pcall(function()
             local anim = Instance.new("Animation")
             anim.AnimationId = animId
             track = animator:LoadAnimation(anim)
             if priority then track.Priority = priority end
-            track:Play()
         end)
         return track
     end
 
-    -- Load tracks
-    local activeTracks = {}
-    activeTracks.Walk = load(walkId, Enum.AnimationPriority.Movement)
-    activeTracks.Run = load(runId, Enum.AnimationPriority.Movement)
-    activeTracks.Idle = load(idleId, Enum.AnimationPriority.Movement)
+    local walkTrack = loadAnim(walkId, Enum.AnimationPriority.Movement)
+    local runTrack = loadAnim(runId, Enum.AnimationPriority.Movement)
+    local idleTrack = loadAnim(idleId, Enum.AnimationPriority.Movement)
 
-    char._animTracks = activeTracks
+    char._animTracks = {Walk=walkTrack, Run=runTrack, Idle=idleTrack}
+    char._currentTrack = nil
 
-    -- Update loop for movement
+    -- RenderStepped update
     local conn
     conn = RunService.RenderStepped:Connect(function()
         if not hum or not hum.RootPart then return end
         local speed = hum.RootPart.Velocity.Magnitude
         local newTrack
+
         if speed > 18 then
-            newTrack = activeTracks.Run
+            newTrack = walkTrack and runTrack or walkTrack
         elseif speed > 1 then
-            newTrack = activeTracks.Walk
+            newTrack = walkTrack
         else
-            newTrack = activeTracks.Idle
+            newTrack = idleTrack
         end
 
         if newTrack and char._currentTrack ~= newTrack then
             if char._currentTrack and char._currentTrack.IsPlaying then
-                char._currentTrack:Stop(0.2)
+                pcall(function() char._currentTrack:Stop(0.2) end)
             end
-            newTrack:Play(0.2)
+            pcall(function() newTrack:Play(0.2) end)
             char._currentTrack = newTrack
         end
     end)
