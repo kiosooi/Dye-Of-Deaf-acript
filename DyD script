@@ -558,6 +558,8 @@ AbilitiesTab:CreateButton({
 
 local Tab = Window:CreateTab("Anti & delete", 0) -- Title, Image
 
+local Section = Tab:CreateSection("Anti Gui")
+
 local antiTauntEnabled = false
 
 Tab:CreateToggle({
@@ -630,6 +632,44 @@ Tab:CreateToggle({
                         end
                     end
                     task.wait(0.11)
+                end
+            end)
+        end
+    end
+})
+
+local antiDoorsEnabled = false
+
+Tab:CreateToggle({
+    Name = "Anti Killer only doors",
+    CurrentValue = false,
+    Flag = "anti_killer_doors",
+    Callback = function(Value)
+        antiDoorsEnabled = Value
+
+        if Value then
+            task.spawn(function()
+                while antiDoorsEnabled do
+                    local mapFolder = workspace:FindFirstChild("Map")
+                    if mapFolder then
+                        -- Loop through all children in Map (the actual map folder is random)
+                        for _, mapChild in pairs(mapFolder:GetChildren()) do
+                            if mapChild:IsA("Folder") and mapChild.Name ~= "Map" then
+                                local adminDoors = mapChild:FindFirstChild("AdminDoors")
+                                if adminDoors then
+                                    for _, door in pairs(adminDoors:GetChildren()) do
+                                        if door.Name == "AdminDoor" then
+                                            -- Set CanCollide to false for every AdminDoor
+                                            pcall(function()
+                                                door.CanCollide = false
+                                            end)
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                    end
+                    task.wait(0.5) -- Adjust interval if needed
                 end
             end)
         end
