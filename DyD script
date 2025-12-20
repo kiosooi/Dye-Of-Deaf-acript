@@ -669,7 +669,7 @@ Tab:CreateToggle({
                             end
                         end
                     end
-                    task.wait(0.5) -- Adjust interval if needed
+                    task.wait(0.11) -- Adjust interval if needed
                 end
             end)
         end
