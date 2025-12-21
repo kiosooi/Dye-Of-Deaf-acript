@@ -803,15 +803,15 @@ Tab:CreateToggle({
 })
 
 ---------------------------------------------------------------------
--- ===== BUFFS SECTION =====
+-- ===== BUFFS =====
 ---------------------------------------------------------------------
 
-local BuffsSection = Tab:CreateSection("Buffs")
+local Section = Tab:CreateSection("Buffs")
 
 local ExtraSpeedEnabled = false
 local ExtraSpeedValue = 0
 
--- Helper: find character model in Teams
+-- Find character model under Teams
 local function getTeamCharacter()
     local teams = workspace:FindFirstChild("Teams")
     if not teams then return nil end
@@ -858,7 +858,7 @@ local function removeExtraSpeed()
 end
 
 -- TextBox
-BuffsSection:CreateInput({
+Tab:CreateInput({
     Name = "ExtraSpeed Value",
     PlaceholderText = "Enter number (e.g. 10)",
     RemoveTextAfterFocusLost = false,
@@ -874,7 +874,7 @@ BuffsSection:CreateInput({
 })
 
 -- Toggle
-BuffsSection:CreateToggle({
+Tab:CreateToggle({
     Name = "add ExtraSpeed",
     CurrentValue = false,
     Callback = function(Value)
