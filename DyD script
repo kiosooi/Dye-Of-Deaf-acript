@@ -608,7 +608,7 @@ task.spawn(function()
     end
 end)
 
-local Tab = Window:CreateTab("Anti & delete", 0) -- Title, Image
+local Tab = Window:CreateTab("Anti & Buffs", 0) -- Title, Image
 
 local Section = Tab:CreateSection("Anti Gui")
 
@@ -798,6 +798,92 @@ Tab:CreateToggle({
             end)
         else
             if promptConn then promptConn:Disconnect() promptConn = nil end
+        end
+    end
+})
+
+---------------------------------------------------------------------
+-- ===== BUFFS SECTION =====
+---------------------------------------------------------------------
+
+local BuffsSection = AbilitiesTab:CreateSection("Buffs")
+
+local ExtraSpeedEnabled = false
+local ExtraSpeedValue = 0
+
+-- Helper: find character model in Teams
+local function getTeamCharacter()
+    local teams = workspace:FindFirstChild("Teams")
+    if not teams then return nil end
+
+    local playerName = game:GetService("Players").LocalPlayer.Name
+
+    local civilians = teams:FindFirstChild("Civilians")
+    if civilians and civilians:FindFirstChild(playerName) then
+        return civilians[playerName]
+    end
+
+    local killers = teams:FindFirstChild("Killers")
+    if killers and killers:FindFirstChild(playerName) then
+        return killers[playerName]
+    end
+
+    return nil
+end
+
+-- Helper: apply ExtraSpeed
+local function applyExtraSpeed()
+    local char = getTeamCharacter()
+    if not char then return end
+
+    local existing = char:FindFirstChild("ExtraSpeed")
+    if not existing then
+        existing = Instance.new("NumberValue")
+        existing.Name = "ExtraSpeed"
+        existing.Parent = char
+    end
+
+    existing.Value = ExtraSpeedValue
+end
+
+-- Helper: remove ExtraSpeed
+local function removeExtraSpeed()
+    local char = getTeamCharacter()
+    if not char then return end
+
+    local existing = char:FindFirstChild("ExtraSpeed")
+    if existing then
+        existing:Destroy()
+    end
+end
+
+-- TextBox: ExtraSpeed Value
+BuffsSection:CreateInput({
+    Name = "ExtraSpeed Value",
+    PlaceholderText = "Enter number (e.g. 10)",
+    RemoveTextAfterFocusLost = false,
+    Callback = function(Text)
+        local num = tonumber(Text)
+        if num then
+            ExtraSpeedValue = num
+            if ExtraSpeedEnabled then
+                applyExtraSpeed()
+            end
+        end
+    end
+})
+
+-- Toggle: add ExtraSpeed
+BuffsSection:CreateToggle({
+    Name = "add ExtraSpeed",
+    CurrentValue = false,
+    Callback = function(Value)
+        ExtraSpeedEnabled = Value
+
+        if Value then
+            applyExtraSpeed()
+        else
+            removeExtraSpeed()
         end
     end
 })
