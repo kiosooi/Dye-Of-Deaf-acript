@@ -533,6 +533,87 @@ AbilitiesTab:CreateButton({
     end
 })
 
+AbilitiesTab:CreateSection("auto use Abilities if you are lazy to do it yourself")
+
+-- Toggle states
+local SpamAbility1 = false
+local SpamAbility2 = false
+
+-- Toggle: Ability 1
+MainTab:CreateToggle({
+    Name = "Auto Use Ability 1",
+    CurrentValue = false,
+    Callback = function(Value)
+        SpamAbility1 = Value
+    end
+})
+
+-- Toggle: Ability 2
+MainTab:CreateToggle({
+    Name = "Auto Use Ability 2",
+    CurrentValue = false,
+    Callback = function(Value)
+        SpamAbility2 = Value
+    end
+})
+
+-- Helper function to get ability name safely
+local function getAbilityName(abilitiesFolder, abilityFolderName)
+    local abilityFolder = abilitiesFolder:FindFirstChild(abilityFolderName)
+    if not abilityFolder then return nil end
+
+    local nameLabel = abilityFolder:FindFirstChild("AbilityName")
+    if nameLabel and nameLabel:IsA("TextLabel") then
+        return nameLabel.Text
+    end
+
+    return nil
+end
+
+-- Loop: Ability 1
+task.spawn(function()
+    while true do
+        if SpamAbility1 then
+            pcall(function()
+                local player = game:GetService("Players").LocalPlayer
+                local abilities = player.PlayerGui:WaitForChild("Abilities")
+                local remote = abilities:WaitForChild("KeyStuff"):WaitForChild("HandleAllat")
+
+                local abilityName = getAbilityName(abilities, "Ability1")
+                if abilityName then
+                    remote:FireServer(
+                        abilityName,
+                        abilities:WaitForChild("Ability1")
+                    )
+                end
+            end)
+        end
+        task.wait(0)
+    end
+end)
+
+-- Loop: Ability 2
+task.spawn(function()
+    while true do
+        if SpamAbility2 then
+            pcall(function()
+                local player = game:GetService("Players").LocalPlayer
+                local abilities = player.PlayerGui:WaitForChild("Abilities")
+                local remote = abilities:WaitForChild("KeyStuff"):WaitForChild("HandleAllat")
+
+                local abilityName = getAbilityName(abilities, "Ability2")
+                if abilityName then
+                    remote:FireServer(
+                        abilityName,
+                        abilities:WaitForChild("Ability2")
+                    )
+                end
+            end)
+        end
+        task.wait(0)
+    end
+end)
+
 local Tab = Window:CreateTab("Anti & delete", 0) -- Title, Image
 
 local Section = Tab:CreateSection("Anti Gui")
