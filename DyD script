@@ -344,29 +344,6 @@ Tab:CreateToggle({
     end
 })
 
--- ===== PROXIMITY PROMPTS =====
-Tab:CreateSection("Proximity Prompts")
-
-local promptConn
-
-Tab:CreateToggle({
-    Name = "Instant Proximity Prompts",
-    CurrentValue = false,
-    Flag = "proximity",
-    Callback = function(Value)
-        if Value then
-            for _, p in pairs(workspace:GetDescendants()) do
-                if p:IsA("ProximityPrompt") then p.HoldDuration = 0 end
-            end
-            promptConn = workspace.DescendantAdded:Connect(function(d)
-                if d:IsA("ProximityPrompt") then d.HoldDuration = 0 end
-            end)
-        else
-            if promptConn then promptConn:Disconnect() promptConn = nil end
-        end
-    end
-})
-
 ---------------------------------------------------------------------
 -- ===== ABILITIES TAB =====
 ---------------------------------------------------------------------
@@ -722,6 +699,29 @@ Tab:CreateToggle({
             end
 
             artlessCache = {}
+        end
+    end
+})
+
+-- ===== PROXIMITY PROMPTS =====
+Tab:CreateSection("Proximity Prompts")
+
+local promptConn
+
+Tab:CreateToggle({
+    Name = "Anti proximity prompt hold duration",
+    CurrentValue = false,
+    Flag = "proximity",
+    Callback = function(Value)
+        if Value then
+            for _, p in pairs(workspace:GetDescendants()) do
+                if p:IsA("ProximityPrompt") then p.HoldDuration = 0 end
+            end
+            promptConn = workspace.DescendantAdded:Connect(function(d)
+                if d:IsA("ProximityPrompt") then d.HoldDuration = 0 end
+            end)
+        else
+            if promptConn then promptConn:Disconnect() promptConn = nil end
         end
     end
 })
