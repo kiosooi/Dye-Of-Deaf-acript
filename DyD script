@@ -677,6 +677,7 @@ Tab:CreateToggle({
 })
 
 local antiArtlessWallEnabled = false
+local artlessCache = {}
 
 Tab:CreateToggle({
     Name = "Anti Artless wall",
@@ -692,15 +693,18 @@ Tab:CreateToggle({
                     local artlessWall = residue and residue:FindFirstChild("ArtlessWall")
 
                     if artlessWall then
-                        for _, obj in ipairs(artlessWall:GetChildren()) do
-                            -- match Wall_<playername>
-                            if obj.Name:sub(1, 5) == "Wall_" then
-                                -- disable collision on EVERYTHING inside
-                                for _, descendant in ipairs(obj:GetDescendants()) do
-                                    if descendant:IsA("BasePart") then
-                                        descendant.CanCollide = false
-                                    end
+                        for _, obj in ipairs(artlessWall:GetDescendants()) do
+                            if obj:IsA("BasePart") then
+                                -- cache original values once
+                                if not artlessCache[obj] then
+                                    artlessCache[obj] = {
+                                        CanCollide = obj.CanCollide,
+                                        Transparency = obj.Transparency
+                                    }
                                 end
+
+                                obj.CanCollide = false
+                                obj.Transparency = math.clamp(obj.Transparency + 0.4, 0, 1)
                             end
                         end
                     end
@@ -708,6 +712,16 @@ Tab:CreateToggle({
                     task.wait(1)
                 end
             end)
+        else
+            -- restore everything when toggled off
+            for part, data in pairs(artlessCache) do
+                if part and part.Parent then
+                    part.CanCollide = data.CanCollide
+                    part.Transparency = data.Transparency
+                end
+            end
+
+            artlessCache = {}
         end
     end
 })
