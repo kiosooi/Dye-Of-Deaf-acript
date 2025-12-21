@@ -831,33 +831,33 @@ local function getTeamCharacter()
     return nil
 end
 
--- Helper: apply ExtraSpeed
+-- Apply ExtraSpeed
 local function applyExtraSpeed()
     local char = getTeamCharacter()
     if not char then return end
 
-    local existing = char:FindFirstChild("ExtraSpeed")
-    if not existing then
-        existing = Instance.new("NumberValue")
-        existing.Name = "ExtraSpeed"
-        existing.Parent = char
+    local val = char:FindFirstChild("ExtraSpeed")
+    if not val then
+        val = Instance.new("NumberValue")
+        val.Name = "ExtraSpeed"
+        val.Parent = char
     end
 
-    existing.Value = ExtraSpeedValue
+    val.Value = ExtraSpeedValue
 end
 
--- Helper: remove ExtraSpeed
+-- Remove ExtraSpeed
 local function removeExtraSpeed()
     local char = getTeamCharacter()
     if not char then return end
 
-    local existing = char:FindFirstChild("ExtraSpeed")
-    if existing then
-        existing:Destroy()
+    local val = char:FindFirstChild("ExtraSpeed")
+    if val then
+        val:Destroy()
     end
 end
 
--- TextBox: ExtraSpeed Value
+-- TextBox
 BuffsSection:CreateInput({
     Name = "ExtraSpeed Value",
     PlaceholderText = "Enter number (e.g. 10)",
@@ -873,13 +873,12 @@ BuffsSection:CreateInput({
     end
 })
 
--- Toggle: add ExtraSpeed
+-- Toggle
 BuffsSection:CreateToggle({
     Name = "add ExtraSpeed",
     CurrentValue = false,
     Callback = function(Value)
         ExtraSpeedEnabled = Value
-
         if Value then
             applyExtraSpeed()
         else
