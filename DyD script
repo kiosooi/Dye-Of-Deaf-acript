@@ -706,7 +706,6 @@ Tab:CreateToggle({
 })
 
 -- ===== PROXIMITY PROMPTS =====
-Tab:CreateSection("Proximity Prompts")
 
 local promptConn
 
