@@ -806,7 +806,7 @@ Tab:CreateToggle({
 -- ===== BUFFS SECTION =====
 ---------------------------------------------------------------------
 
-local BuffsSection = AbilitiesTab:CreateSection("Buffs")
+local BuffsSection = Tab:CreateSection("Buffs")
 
 local ExtraSpeedEnabled = false
 local ExtraSpeedValue = 0
