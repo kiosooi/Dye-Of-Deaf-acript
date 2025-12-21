@@ -535,10 +535,6 @@ AbilitiesTab:CreateButton({
 
 AbilitiesTab:CreateSection("auto use Abilities if you are lazy to do it yourself")
 
----------------------------------------------------------------------
--- Auto-use Abilities Section (FIXED)
----------------------------------------------------------------------
-
 -- Toggle states
 local SpamAbility1 = false
 local SpamAbility2 = false
@@ -589,7 +585,7 @@ task.spawn(function()
                 end
             end)
         end
-        task.wait(0.5)
+        task.wait(0)
     end
 end)
 
@@ -608,7 +604,7 @@ task.spawn(function()
                 end
             end)
         end
-        task.wait(0.5)
+        task.wait(0)
     end
 end)
 
