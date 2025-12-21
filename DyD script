@@ -22,7 +22,7 @@ local Window = Rayfield:CreateWindow({
 })
 
 -- MAIN TAB
-local Tab = Window:CreateTab("Stamina", 0)
+local Tab = Window:CreateTab("Stamina and ESP", 0)
 Tab:CreateSection("Stamina")
 
 -- ===== STAMINA HELPERS =====
