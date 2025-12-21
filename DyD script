@@ -539,8 +539,6 @@ AbilitiesTab:CreateSection("auto use Abilities if you are lazy to do it yourself
 -- Auto-use Abilities Section (FIXED)
 ---------------------------------------------------------------------
 
-AbilitiesTab:CreateSection("Auto use abilities (lazy mode)")
-
 -- Toggle states
 local SpamAbility1 = false
 local SpamAbility2 = false
