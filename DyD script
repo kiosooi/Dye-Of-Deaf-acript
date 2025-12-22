@@ -998,6 +998,78 @@ Tab:CreateToggle({
     end
 })
 
+-- ===== LMS SONGS TAB =====
+local LmsTab = Window:CreateTab("Lms Songs", 0)
+
+-- LMS options
+local LmsSongs = {
+    ["Careless"] = "rbxassetid://93358900440548",
+    ["Double Trouble"] = "rbxassetid://77766838280987",
+    ["default"] = "",
+    ["mastery"] = "rbxassetid://91738261058177",
+    ["OneBounce"] = "rbxassetid://77980681161894",
+    ["Showtime"] = "rbxassetid://135559696562367",
+    ["tauntlms"] = "rbxassetid://131416964338970",
+    ["vigilante showdown"] = "rbxassetid://83769143726813",
+    ["Y2K"] = "rbxassetid://102832185813999",
+    ["Omega"] = "rbxassetid://116596668205880",
+    ["juggernaut"] = "rbxassetid://78097209202274"
+}
+
+-- Selected options
+local SelectedLMS = ""
+local TargetLMS = ""
+
+-- Section
+local Section = LmsTab:CreateSection("Replace LMS")
+
+-- Dropdown 1: What LMS to change
+local Dropdown1 = LmsTab:CreateDropdown({
+    Name = "What LMS to change",
+    Options = (function()
+        local opts = {}
+        for name, _ in pairs(LmsSongs) do table.insert(opts, name) end
+        return opts
+    end)(),
+    CurrentOption = "",
+    Callback = function(Value)
+        SelectedLMS = Value
+    end
+})
+
+-- Dropdown 2: To what change
+local Dropdown2 = LmsTab:CreateDropdown({
+    Name = "To what change",
+    Options = (function()
+        local opts = {}
+        for name, _ in pairs(LmsSongs) do table.insert(opts, name) end
+        return opts
+    end)(),
+    CurrentOption = "",
+    Callback = function(Value)
+        TargetLMS = Value
+    end
+})
+
+-- Button: Replace LMS
+LmsTab:CreateButton({
+    Name = "Replace LMS",
+    Callback = function()
+        if SelectedLMS == "" or TargetLMS == "" then
+            warn("Select both LMS songs first!")
+            return
+        end
+
+        local originalSound = workspace:FindFirstChild("Values") and workspace.Values:FindFirstChild(SelectedLMS)
+        if originalSound and originalSound:IsA("Sound") then
+            originalSound.SoundId = LmsSongs[TargetLMS]
+            print("Replaced " .. SelectedLMS .. " with " .. TargetLMS)
+        else
+            warn("Could not find the original LMS in workspace.Values")
+        end
+    end
+})
+
 local Tab = Window:CreateTab("Misc", 0) -- Title, Image
 
 local Button = Tab:CreateButton({
