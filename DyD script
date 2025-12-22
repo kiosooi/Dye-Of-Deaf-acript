@@ -709,7 +709,7 @@ Tab:CreateToggle({
                             cinematicBars:Destroy()
                         end
                     end
-                    task.wait(0.1)
+                    task.wait(0.11)
                 end
             end)
         end
