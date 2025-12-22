@@ -690,6 +690,32 @@ Tab:CreateToggle({
     end
 })
 
+local removeCinematicBarsEnabled = false
+
+Tab:CreateToggle({
+    Name = "Remove Cinematic Bars",
+    CurrentValue = false,
+    Flag = "remove_cinematic_bars",
+    Callback = function(Value)
+        removeCinematicBarsEnabled = Value
+
+        if Value then
+            task.spawn(function()
+                while removeCinematicBarsEnabled do
+                    local playerGui = game.Players.LocalPlayer:FindFirstChild("PlayerGui")
+                    if playerGui then
+                        local cinematicBars = playerGui:FindFirstChild("RealCinematicBars")
+                        if cinematicBars then
+                            cinematicBars:Destroy()
+                        end
+                    end
+                    task.wait(0.1)
+                end
+            end)
+        end
+    end
+})
+
 local Section = Tab:CreateSection("Anti Object")
 
 local antiDoorsEnabled = false
