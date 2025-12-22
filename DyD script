@@ -346,7 +346,7 @@ Tab:CreateToggle({
 
 -- ===== PROXIMITY PROMPTS =====
 
-Tab:CreateSection("anti proximity prompts ts is the reason the auto save works for whatever reason 🥀😔")
+Tab:CreateSection("anti proximity prompts ts is the reason the auto save works for idk what reason 🥀😔")
 
 local promptConn
 
