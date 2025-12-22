@@ -740,6 +740,32 @@ Tab:CreateToggle({
     end
 })
 
+local removeBlackButAutoEnabled = false
+
+Tab:CreateToggle({
+    Name = "Anti Black Screen when its careless",
+    CurrentValue = false,
+    Flag = "remove_blackbutauto",
+    Callback = function(Value)
+        removeBlackButAutoEnabled = Value
+
+        if Value then
+            task.spawn(function()
+                while removeBlackButAutoEnabled do
+                    local playerGui = game.Players.LocalPlayer:FindFirstChild("PlayerGui")
+                    if playerGui then
+                        local targetGui = playerGui:FindFirstChild("BlackButAuto")
+                        if targetGui then
+                            targetGui:Destroy()
+                        end
+                    end
+                    task.wait(0.1)
+                end
+            end)
+        end
+    end
+})
+
 local Section = Tab:CreateSection("Anti Object")
 
 local antiDoorsEnabled = false
