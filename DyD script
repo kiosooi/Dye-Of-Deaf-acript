@@ -743,7 +743,7 @@ Tab:CreateToggle({
 local removeBlackButAutoEnabled = false
 
 Tab:CreateToggle({
-    Name = "Anti Black Screen when its careless",
+    Name = "Anti Black Screen for careless",
     CurrentValue = false,
     Flag = "remove_blackbutauto",
     Callback = function(Value)
@@ -757,6 +757,32 @@ Tab:CreateToggle({
                         local targetGui = playerGui:FindFirstChild("BlackButAuto")
                         if targetGui then
                             targetGui:Destroy()
+                        end
+                    end
+                    task.wait(0.1)
+                end
+            end)
+        end
+    end
+})
+
+local antiOmegaFlashEnabled = false
+
+Tab:CreateToggle({
+    Name = "anti Omega flash",
+    CurrentValue = false,
+    Flag = "anti_omega_flash",
+    Callback = function(Value)
+        antiOmegaFlashEnabled = Value
+
+        if Value then
+            task.spawn(function()
+                while antiOmegaFlashEnabled do
+                    local playerGui = game.Players.LocalPlayer:FindFirstChild("PlayerGui")
+                    if playerGui then
+                        local flashGui = playerGui:FindFirstChild("Flash")
+                        if flashGui then
+                            flashGui:Destroy()
                         end
                     end
                     task.wait(0.1)
