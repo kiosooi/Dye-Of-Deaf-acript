@@ -693,7 +693,7 @@ Tab:CreateToggle({
 local removeCinematicBarsEnabled = false
 
 Tab:CreateToggle({
-    Name = "Remove Cinematic Bars",
+    Name = "Anti Cinematic Bars for Careless",
     CurrentValue = false,
     Flag = "remove_cinematic_bars",
     Callback = function(Value)
