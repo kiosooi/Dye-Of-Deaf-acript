@@ -504,7 +504,7 @@ AbilitiesTab:CreateButton({
 
 -- CloakTech (Taunt + Cloak)
 AbilitiesTab:CreateButton({
-    Name = "CloakTech (Taunt + Cloak)",
+    Name = "OneHit Wonder (Taunt + Cloak)",
     Callback = function()
         SetupRemote:FireServer(
             {Name = "Taunt", Icon = "rbxassetid://122433943011026"},
