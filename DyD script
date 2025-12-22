@@ -1001,19 +1001,21 @@ Tab:CreateToggle({
 -- ===== LMS SONGS TAB =====
 local LmsTab = Window:CreateTab("Lms Songs", 0)
 
--- LMS options
-local LmsSongs = {
-    ["Careless"] = "rbxassetid://93358900440548",
-    ["Double Trouble"] = "rbxassetid://77766838280987",
-    ["default"] = "",
-    ["mastery"] = "rbxassetid://91738261058177",
+-- Mapping: Friendly name -> workspace.Values Sound name / SoundId
+local LmsMap = {
+    ["CarelessLMS"] = "rbxassetid://93358900440548",
+    ["DoubleTroubleLMS"] = "rbxassetid://77766838280987",
+    ["Juggernaut"] = "rbxassetid://78097209202274",
+    ["LMS"] = "rbxassetid://97835650588982",
+    ["MangoFinale"] = "rbxassetid://126006501136866",
+    ["MasteryLMS"] = "rbxassetid://91738261058177",
+    ["Omega"] = "rbxassetid://116596668205880",
     ["OneBounce"] = "rbxassetid://77980681161894",
     ["Showtime"] = "rbxassetid://135559696562367",
-    ["tauntlms"] = "rbxassetid://131416964338970",
-    ["vigilante showdown"] = "rbxassetid://83769143726813",
-    ["Y2K"] = "rbxassetid://102832185813999",
-    ["Omega"] = "rbxassetid://116596668205880",
-    ["juggernaut"] = "rbxassetid://78097209202274"
+    ["TauntLMS"] = "rbxassetid://131416964338970",
+    ["VigilanteShowdown"] = "rbxassetid://83769143726813",
+    ["WeatherLMS"] = "rbxassetid://88044954314004",
+    ["Y2K"] = "rbxassetid://102832185813999"
 }
 
 -- Selected options
@@ -1028,7 +1030,7 @@ local Dropdown1 = LmsTab:CreateDropdown({
     Name = "What LMS to change",
     Options = (function()
         local opts = {}
-        for name, _ in pairs(LmsSongs) do table.insert(opts, name) end
+        for name, _ in pairs(LmsMap) do table.insert(opts, name) end
         return opts
     end)(),
     CurrentOption = "",
@@ -1042,7 +1044,7 @@ local Dropdown2 = LmsTab:CreateDropdown({
     Name = "To what change",
     Options = (function()
         local opts = {}
-        for name, _ in pairs(LmsSongs) do table.insert(opts, name) end
+        for name, _ in pairs(LmsMap) do table.insert(opts, name) end
         return opts
     end)(),
     CurrentOption = "",
@@ -1060,12 +1062,29 @@ LmsTab:CreateButton({
             return
         end
 
-        local originalSound = workspace:FindFirstChild("Values") and workspace.Values:FindFirstChild(SelectedLMS)
-        if originalSound and originalSound:IsA("Sound") then
-            originalSound.SoundId = LmsSongs[TargetLMS]
+        local valuesFolder = workspace:FindFirstChild("Values")
+        if not valuesFolder then
+            warn("workspace.Values not found!")
+            return
+        end
+
+        local originalSound = valuesFolder:FindFirstChild(SelectedLMS)
+        local targetSound = valuesFolder:FindFirstChild(TargetLMS)
+
+        -- If the mapping is a Sound object name
+        if originalSound and targetSound and originalSound:IsA("Sound") and targetSound:IsA("Sound") then
+            originalSound.SoundId = targetSound.SoundId
             print("Replaced " .. SelectedLMS .. " with " .. TargetLMS)
+        -- If the mapping is directly an asset id
+        elseif typeof(LmsMap[TargetLMS]) == "string" and string.find(LmsMap[TargetLMS], "rbxassetid://") then
+            if originalSound and originalSound:IsA("Sound") then
+                originalSound.SoundId = LmsMap[TargetLMS]
+                print("Replaced " .. SelectedLMS .. " with asset id " .. LmsMap[TargetLMS])
+            else
+                warn("Original LMS sound not found for " .. SelectedLMS)
+            end
         else
-            warn("Could not find the original LMS in workspace.Values")
+            warn("Could not find the LMS sounds in workspace.Values")
         end
     end
 })
