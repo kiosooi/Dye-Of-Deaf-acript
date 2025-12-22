@@ -22,7 +22,7 @@ local Window = Rayfield:CreateWindow({
 })
 
 -- MAIN TAB
-local Tab = Window:CreateTab("Stamina and ESP", 0)
+local Tab = Window:CreateTab("Main", 0)
 Tab:CreateSection("Stamina")
 
 -- ===== STAMINA HELPERS =====
@@ -341,6 +341,28 @@ Tab:CreateToggle({
     Callback = function(Value)
         hpESPEnabled = Value
         refreshTextESP()
+    end
+})
+
+-- ===== PROXIMITY PROMPTS =====
+
+local promptConn
+
+Tab:CreateToggle({
+    Name = "Anti proximity prompt hold duration",
+    CurrentValue = false,
+    Flag = "proximity",
+    Callback = function(Value)
+        if Value then
+            for _, p in pairs(workspace:GetDescendants()) do
+                if p:IsA("ProximityPrompt") then p.HoldDuration = 0 end
+            end
+            promptConn = workspace.DescendantAdded:Connect(function(d)
+                if d:IsA("ProximityPrompt") then d.HoldDuration = 0 end
+            end)
+        else
+            if promptConn then promptConn:Disconnect() promptConn = nil end
+        end
     end
 })
 
@@ -802,28 +824,6 @@ Tab:CreateToggle({
             end
 
             artlessCache = {}
-        end
-    end
-})
-
--- ===== PROXIMITY PROMPTS =====
-
-local promptConn
-
-Tab:CreateToggle({
-    Name = "Anti proximity prompt hold duration",
-    CurrentValue = false,
-    Flag = "proximity",
-    Callback = function(Value)
-        if Value then
-            for _, p in pairs(workspace:GetDescendants()) do
-                if p:IsA("ProximityPrompt") then p.HoldDuration = 0 end
-            end
-            promptConn = workspace.DescendantAdded:Connect(function(d)
-                if d:IsA("ProximityPrompt") then d.HoldDuration = 0 end
-            end)
-        else
-            if promptConn then promptConn:Disconnect() promptConn = nil end
         end
     end
 })
