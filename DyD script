@@ -4,6 +4,7 @@ local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Lighting = game:GetService("Lighting")
+local UserInputService = game:GetService("UserInputService")
 
 local LocalPlayer = Players.LocalPlayer
 
@@ -365,6 +366,155 @@ Tab:CreateToggle({
         else
             if promptConn then promptConn:Disconnect() promptConn = nil end
         end
+    end
+})
+
+-- ===== Self Fling (VERY FUNNY) =====
+
+local Character = Player.Character or Player.CharacterAdded:Wait()
+local Humanoid = Character:WaitForChild("Humanoid")
+local RootPart = Humanoid.RootPart
+
+local Config = {
+    Enabled = false,
+
+    FlingHotkey = "X",
+    TpBackHotkey = "C",
+
+    Power = 250,
+    Upward = 120,
+    Spin = 600,
+    BurstTime = 0.15
+}
+
+local CurrentPos
+local Flinging = false
+local InputConnection
+
+-- Section
+Tab:CreateSection("Self Fling (VERY FUNNY)")
+
+-- Keybind textboxes (ABOVE toggle)
+Tab:CreateInput({
+    Name = "Fling keybind",
+    PlaceholderText = "X",
+    CurrentValue = "X",
+    Callback = function(Value)
+        if Value ~= "" then
+            Config.FlingHotkey = Value:upper()
+        end
+    end
+})
+
+Tab:CreateInput({
+    Name = "TpBack Keybind",
+    PlaceholderText = "C",
+    CurrentValue = "C",
+    Callback = function(Value)
+        if Value ~= "" then
+            Config.TpBackHotkey = Value:upper()
+        end
+    end
+})
+
+-- Toggle
+Tab:CreateToggle({
+    Name = "Self Fling",
+    CurrentValue = false,
+    Flag = "self_fling_toggle",
+    Callback = function(Value)
+        Config.Enabled = Value
+
+        if Value then
+            InputConnection = UserInputService.InputBegan:Connect(function(input, typing)
+                if typing or not Config.Enabled then return end
+
+                -- FLING
+                if input.KeyCode == Enum.KeyCode[Config.FlingHotkey] and not Flinging then
+                    Flinging = true
+
+                    if RootPart.Velocity.Magnitude < 20 then
+                        CurrentPos = RootPart.CFrame
+                    end
+
+                    local start = tick()
+                    while Config.Enabled and tick() - start < Config.BurstTime do
+                        RootPart.Velocity =
+                            RootPart.CFrame.LookVector * Config.Power
+                            + Vector3.new(0, Config.Upward, 0)
+
+                        RootPart.RotVelocity = Vector3.new(
+                            math.random(-Config.Spin, Config.Spin),
+                            math.random(-Config.Spin, Config.Spin),
+                            math.random(-Config.Spin, Config.Spin)
+                        )
+
+                        RunService.Heartbeat:Wait()
+                    end
+
+                    Flinging = false
+
+                -- TP BACK
+                elseif input.KeyCode == Enum.KeyCode[Config.TpBackHotkey] then
+                    if CurrentPos then
+                        RootPart.Velocity = Vector3.zero
+                        RootPart.RotVelocity = Vector3.zero
+                        RootPart.CFrame = CurrentPos
+                        Humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
+                    end
+                end
+            end)
+        else
+            if InputConnection then
+                InputConnection:Disconnect()
+                InputConnection = nil
+            end
+            Flinging = false
+        end
+    end
+})
+
+-- Power
+Tab:CreateInput({
+    Name = "Power",
+    PlaceholderText = tostring(Config.Power),
+    CurrentValue = tostring(Config.Power),
+    Callback = function(Value)
+        local num = tonumber(Value)
+        if num then Config.Power = num end
+    end
+})
+
+-- Upward
+Tab:CreateInput({
+    Name = "Upward",
+    PlaceholderText = tostring(Config.Upward),
+    CurrentValue = tostring(Config.Upward),
+    Callback = function(Value)
+        local num = tonumber(Value)
+        if num then Config.Upward = num end
+    end
+})
+
+-- Spin
+Tab:CreateInput({
+    Name = "Spin",
+    PlaceholderText = tostring(Config.Spin),
+    CurrentValue = tostring(Config.Spin),
+    Callback = function(Value)
+        local num = tonumber(Value)
+        if num then Config.Spin = num end
+    end
+})
+
+-- BurstTime
+Tab:CreateInput({
+    Name = "BurstTime",
+    PlaceholderText = tostring(Config.BurstTime),
+    CurrentValue = tostring(Config.BurstTime),
+    Callback = function(Value)
+        local num = tonumber(Value)
+        if num then Config.BurstTime = num end
     end
 })
 
