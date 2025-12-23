@@ -396,6 +396,7 @@ local Config = {
 local CurrentPos
 local Flinging = false
 local InputConnection
+local InputEndedConnection
 
 -- Section
 Tab:CreateSection("Self Fling (VERY FUNNY)")
@@ -423,6 +424,43 @@ Tab:CreateInput({
     end
 })
 
+local Charge = 1
+local MaxCharge = 5
+local ChargeSpeed = 3
+
+-- Charge
+Tab:CreateInput({
+    Name = "Charge",
+    PlaceholderText = "1",
+    CurrentValue = "1",
+    Callback = function(Value)
+        local num = tonumber(Value)
+        if num then Charge = num end
+    end
+})
+
+-- MaxCharge
+Tab:CreateInput({
+    Name = "MaxCharge",
+    PlaceholderText = "5",
+    CurrentValue = "5",
+    Callback = function(Value)
+        local num = tonumber(Value)
+        if num then MaxCharge = num end
+    end
+})
+
+-- ChargeSpeed
+Tab:CreateInput({
+    Name = "ChargeSpeed",
+    PlaceholderText = "3",
+    CurrentValue = "3",
+    Callback = function(Value)
+        local num = tonumber(Value)
+        if num then ChargeSpeed = num end
+    end
+})
+
 -- Toggle
 Tab:CreateToggle({
     Name = "Self Fling",
@@ -432,33 +470,38 @@ Tab:CreateToggle({
         Config.Enabled = Value
 
         if Value then
-            InputConnection = UserInputService.InputBegan:Connect(function(input, typing)
-                if typing or not Config.Enabled then return end
+            local Charging = false
 
-                -- FLING
-                if input.KeyCode == Enum.KeyCode[Config.FlingHotkey] and not Flinging then
-                    Flinging = true
+            InputConnection = UserInputService.InputBegan:Connect(function(input, typing)
+                if typing or not Config.Enabled or not RootPart then return end
+
+                -- HOLD TO STACK
+                if input.KeyCode == Enum.KeyCode[Config.FlingHotkey] and not Charging then
+                    Charging = true
 
                     if RootPart.Velocity.Magnitude < 20 then
                         CurrentPos = RootPart.CFrame
                     end
 
-                    local start = tick()
-                    while Config.Enabled and tick() - start < Config.BurstTime do
-                        RootPart.Velocity =
-                            RootPart.CFrame.LookVector * Config.Power
-                            + Vector3.new(0, Config.Upward, 0)
+                    task.spawn(function()
+                        while Charging and Config.Enabled and RootPart do
+                            Charge = math.clamp(
+                                Charge + RunService.Heartbeat:Wait() * ChargeSpeed,
+                                1,
+                                MaxCharge
+                            )
 
-                        RootPart.RotVelocity = Vector3.new(
-                            math.random(-Config.Spin, Config.Spin),
-                            math.random(-Config.Spin, Config.Spin),
-                            math.random(-Config.Spin, Config.Spin)
-                        )
+                            RootPart.Velocity =
+                                RootPart.CFrame.LookVector * (Config.Power * Charge)
+                                + Vector3.new(0, Config.Upward * Charge, 0)
 
-                        RunService.Heartbeat:Wait()
-                    end
-
-                    Flinging = false
+                            RootPart.RotVelocity = Vector3.new(
+                                math.random(-Config.Spin, Config.Spin),
+                                math.random(-Config.Spin, Config.Spin),
+                                math.random(-Config.Spin, Config.Spin)
+                            ) * Charge
+                        end
+                    end)
 
                 -- TP BACK
                 elseif input.KeyCode == Enum.KeyCode[Config.TpBackHotkey] then
@@ -470,12 +513,23 @@ Tab:CreateToggle({
                     end
                 end
             end)
+
+            InputEndedConnection = UserInputService.InputEnded:Connect(function(input)
+                if input.KeyCode == Enum.KeyCode[Config.FlingHotkey] then
+                    Charging = false
+                end
+            end)
+
         else
             if InputConnection then
                 InputConnection:Disconnect()
                 InputConnection = nil
             end
-            Flinging = false
+
+            if InputEndedConnection then
+                InputEndedConnection:Disconnect()
+                InputEndedConnection = nil
+            end
         end
     end
 })
