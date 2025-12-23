@@ -371,9 +371,15 @@ Tab:CreateToggle({
 
 -- ===== Self Fling (VERY FUNNY) =====
 
-local Character = Player.Character or Player.CharacterAdded:Wait()
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
 local Humanoid = Character:WaitForChild("Humanoid")
 local RootPart = Humanoid.RootPart
+
+LocalPlayer.CharacterAdded:Connect(function(char)
+    Character = char
+    Humanoid = char:WaitForChild("Humanoid")
+    RootPart = Humanoid.RootPart
+end)
 
 local Config = {
     Enabled = false,
