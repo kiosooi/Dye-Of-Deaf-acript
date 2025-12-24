@@ -1288,6 +1288,48 @@ Tab:CreateToggle({
     end
 })
 
+-- Teleport Tab
+local Tab = Window:CreateTab("Teleports", 0) -- Title, Image
+
+-- Go to the lobby
+Tab:CreateButton({
+    Name = "Go to the lobby",
+    Callback = function()
+        LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(
+            -130.838303, 6.00004578, -1069.27356,
+            0.999590337, 0, -0.028621342,
+            0, 1, 0,
+            0.028621342, 0, 0.999590337
+        )
+    end
+})
+
+-- Second teleport (platform / upper area)
+Tab:CreateButton({
+    Name = "go to test place",
+    Callback = function()
+        LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(
+            -126, 42.000042, -1060,
+            1, 1.21369925e-09, -8.98491893e-14,
+            -1.21369925e-09, 1, -6.36375486e-09,
+            8.98414643e-14, 6.36375486e-09, 1
+        )
+    end
+})
+
+-- Go to Civilian spawn (random "c" part)
+Tab:CreateButton({
+    Name = "Go to Civilian spawn",
+    Callback = function()
+        local mapFolder = workspace.Map:GetChildren()[1]
+        local csFolder = mapFolder.cs
+        local parts = csFolder:GetChildren()
+
+        local randomPart = parts[math.random(1, #parts)]
+        LocalPlayer.Character.HumanoidRootPart.CFrame = randomPart.CFrame
+    end
+})
+
 local Tab = Window:CreateTab("Misc", 0) -- Title, Image
 
 local Button = Tab:CreateButton({
