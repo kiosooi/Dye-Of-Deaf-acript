@@ -5,6 +5,7 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Lighting = game:GetService("Lighting")
 local UserInputService = game:GetService("UserInputService")
+local Stats = game:GetService("Stats")
 
 local LocalPlayer = Players.LocalPlayer
 
@@ -1344,4 +1345,89 @@ local Button = Tab:CreateButton({
    Callback = function()
    loadstring(game:HttpGet("https://raw.githubusercontent.com/infyiff/backup/main/dex.lua"))()-- The function that takes place when the button is pressed
    end,
+})
+
+Tab:CreateButton({
+    Name = "FPS and Ping stats",
+    Callback = function()
+        -- prevent duplicate GUI
+        if game.CoreGui:FindFirstChild("StatsGui") then return end
+
+        -- GUI
+        local gui = Instance.new("ScreenGui")
+        gui.Name = "StatsGui"
+        gui.ResetOnSpawn = false
+        gui.Parent = game.CoreGui
+
+        local frame = Instance.new("Frame")
+        frame.Size = UDim2.new(0, 190, 0, 75)
+        frame.Position = UDim2.new(0, 10, 1, -85)
+        frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+        frame.BackgroundTransparency = 0.2
+        frame.BorderSizePixel = 0
+        frame.Parent = gui
+
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(0, 8)
+        corner.Parent = frame
+
+        -- X button
+        local close = Instance.new("TextButton")
+        close.Size = UDim2.new(0, 20, 0, 20)
+        close.Position = UDim2.new(1, -24, 0, 4)
+        close.Text = "X"
+        close.Font = Enum.Font.SourceSansBold
+        close.TextSize = 14
+        close.TextColor3 = Color3.fromRGB(255, 80, 80)
+        close.BackgroundTransparency = 1
+        close.Parent = frame
+
+        close.MouseButton1Click:Connect(function()
+            gui:Destroy()
+        end)
+
+        -- Text label
+        local label = Instance.new("TextLabel")
+        label.Size = UDim2.new(1, -10, 1, -10)
+        label.Position = UDim2.new(0, 5, 0, 5)
+        label.BackgroundTransparency = 1
+        label.TextXAlignment = Enum.TextXAlignment.Left
+        label.TextYAlignment = Enum.TextYAlignment.Top
+        label.Font = Enum.Font.SourceSansBold
+        label.TextSize = 14
+        label.TextColor3 = Color3.fromRGB(255, 255, 255)
+        label.Text = "Loading..."
+        label.Parent = frame
+
+        -- FPS calc
+        local fps = 60
+        local last = tick()
+
+        -- Update loop
+        RunService.RenderStepped:Connect(function()
+            if not gui.Parent then return end
+
+            local now = tick()
+            fps = math.floor(1 / (now - last))
+            last = now
+
+            local ping = math.floor(
+                Stats.Network.ServerStatsItem["Data Ping"]:GetValue()
+            )
+
+            local timerText = "??:??"
+            if workspace:FindFirstChild("Hint") then
+                local raw = workspace.Hint.Value
+                local time = raw:match("%d%d:%d%d")
+                if time then
+                    timerText = time
+                end
+            end
+
+            label.Text =
+                "FPS: " .. fps ..
+                "\nPing: " .. ping .. " ms" ..
+                "\nTime: " .. timerText
+        end)
+    end
 })
