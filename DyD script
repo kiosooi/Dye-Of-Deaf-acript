@@ -1347,97 +1347,81 @@ local Button = Tab:CreateButton({
    end,
 })
 
-Tab:CreateButton({
+local StatsGui
+local RenderConn
+
+Tab:CreateToggle({
     Name = "FPS and Ping stats",
-    Callback = function()
-        -- Prevent duplicates
-        if game.CoreGui:FindFirstChild("StatsGui") then return end
+    CurrentValue = false,
+    Callback = function(Value)
+        if Value then
+            -- prevent duplicates
+            if StatsGui then return end
 
-        -- GUI
-        local gui = Instance.new("ScreenGui")
-        gui.Name = "StatsGui"
-        gui.ResetOnSpawn = false -- survives respawn
-        gui.Parent = game.CoreGui
+            StatsGui = Instance.new("ScreenGui")
+            StatsGui.Name = "StatsGui"
+            StatsGui.ResetOnSpawn = false
+            StatsGui.Parent = game.CoreGui
 
-        local frame = Instance.new("Frame")
-        frame.Size = UDim2.new(0, 200, 0, 80)
-        frame.Position = UDim2.new(0, 10, 1, -90)
-        frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-        frame.BackgroundTransparency = 0.15
-        frame.BorderSizePixel = 0
-        frame.Parent = gui
+            local text = Instance.new("TextLabel")
+            text.Size = UDim2.new(0, 300, 0, 90)
+            text.Position = UDim2.new(0, 10, 1, -100)
+            text.BackgroundTransparency = 1
+            text.TextXAlignment = Enum.TextXAlignment.Left
+            text.TextYAlignment = Enum.TextYAlignment.Top
+            text.Font = Enum.Font.SourceSansBold
+            text.TextSize = 22 -- BIGGER TEXT
+            text.TextColor3 = Color3.fromRGB(255, 255, 255)
+            text.TextStrokeTransparency = 0
+            text.Text = "Loading..."
+            text.Parent = StatsGui
 
-        Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 8)
+            -- FPS (fast & stable)
+            local fps = 0
+            local frames = 0
+            local last = os.clock()
 
-        -- Close button
-        local close = Instance.new("TextButton")
-        close.Size = UDim2.new(0, 22, 0, 22)
-        close.Position = UDim2.new(1, -26, 0, 4)
-        close.Text = "X"
-        close.Font = Enum.Font.SourceSansBold
-        close.TextSize = 14
-        close.TextColor3 = Color3.fromRGB(255, 80, 80)
-        close.BackgroundTransparency = 1
-        close.Parent = frame
+            RenderConn = RunService.RenderStepped:Connect(function()
+                if not StatsGui then return end
 
-        -- Text
-        local label = Instance.new("TextLabel")
-        label.Size = UDim2.new(1, -10, 1, -10)
-        label.Position = UDim2.new(0, 5, 0, 5)
-        label.BackgroundTransparency = 1
-        label.TextXAlignment = Enum.TextXAlignment.Left
-        label.TextYAlignment = Enum.TextYAlignment.Top
-        label.Font = Enum.Font.SourceSansBold
-        label.TextSize = 14
-        label.TextColor3 = Color3.fromRGB(255, 255, 255)
-        label.Text = "Loading..."
-        label.Parent = frame
-
-        -- FPS calc (stable, no freeze)
-        local fps = 0
-        local frames = 0
-        local lastUpdate = os.clock()
-
-        local renderConn
-        renderConn = RunService.RenderStepped:Connect(function()
-            if not gui.Parent then
-                renderConn:Disconnect()
-                return
-            end
-
-            frames += 1
-            local now = os.clock()
-            if now - lastUpdate >= 1 then
-                fps = frames
-                frames = 0
-                lastUpdate = now
-            end
-
-            -- Ping
-            local ping = math.floor(
-                Stats.Network.ServerStatsItem["Data Ping"]:GetValue()
-            )
-
-            -- Timer from Hint.Appearance.Text
-            local timer = "??:??"
-            local hint = workspace:FindFirstChild("Hint")
-            if hint and hint:FindFirstChild("Appearance") then
-                local text = hint.Appearance.Text
-                local t = text:match("%d%d:%d%d")
-                if t then
-                    timer = t
+                -- FPS
+                frames += 1
+                local now = os.clock()
+                if now - last >= 0.5 then -- updates faster
+                    fps = math.floor(frames / (now - last))
+                    frames = 0
+                    last = now
                 end
+
+                -- Ping (fast)
+                local ping = math.floor(
+                    Stats.Network.ServerStatsItem["Data Ping"]:GetValue()
+                )
+
+                -- FULL Hint text (no parsing)
+                local hintText = "Waiting..."
+                local hint = workspace:FindFirstChild("Hint")
+                if hint and hint:FindFirstChild("Appearance") then
+                    hintText = hint.Appearance.Text
+                end
+
+                text.Text =
+                    "FPS: " .. fps ..
+                    "\nPing: " .. ping .. " ms" ..
+                    "\n" .. hintText
+            end)
+
+        else
+            -- toggle OFF cleanup
+            if RenderConn then
+                RenderConn:Disconnect()
+                RenderConn = nil
             end
 
-            label.Text =
-                "FPS: " .. fps ..
-                "\nPing: " .. ping .. " ms" ..
-                "\nTime: " .. timer
-        end)
-
-        close.MouseButton1Click:Connect(function()
-            if renderConn then renderConn:Disconnect() end
-            gui:Destroy()
-        end)
+            if StatsGui then
+                StatsGui:Destroy()
+                StatsGui = nil
+            end
+        end
     end
 })
