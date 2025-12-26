@@ -848,12 +848,62 @@ end)
 ---------------------------------------------------------------------
 AbilitiesTab:CreateSection("Extra Abilities")
 
--- Table to store keybinds for each ability
+local UserInputService = game:GetService("UserInputService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local player = game.Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui"):WaitForChild("Abilities")
 local ExtraAbilityKeybinds = {}
+local ExtraAbilities = {} -- Stores {AbilityName = abilityGui}
 
--- Function to get the next available Ability slot (Ability3, Ability4, etc.)
+-- Cooldowns GUI
+local cooldownGuiEnabled = false
+local cooldownFrame
+local function createCooldownGui()
+    if cooldownFrame then cooldownFrame:Destroy() end
+    cooldownFrame = Instance.new("ScreenGui")
+    cooldownFrame.Name = "ExtraAbilitiesCooldown"
+    cooldownFrame.ResetOnSpawn = false
+    cooldownFrame.Parent = player.PlayerGui
+
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(0,200,0,20 * #CardAbilities)
+    frame.Position = UDim2.new(0,10,1,-(20*#CardAbilities+10))
+    frame.BackgroundTransparency = 0.5
+    frame.BackgroundColor3 = Color3.fromRGB(0,0,0)
+    frame.Parent = cooldownFrame
+
+    for i, ability in ipairs(CardAbilities) do
+        local label = Instance.new("TextLabel")
+        label.Name = ability.Name .. "_Cooldown"
+        label.Size = UDim2.new(1,0,0,20)
+        label.Position = UDim2.new(0,0,0,(i-1)*20)
+        label.BackgroundTransparency = 1
+        label.TextColor3 = Color3.new(1,1,1)
+        label.Text = ability.Name .. ": Ready"
+        label.TextScaled = true
+        label.Parent = frame
+    end
+end
+
+-- Toggle for cooldown GUI
+AbilitiesTab:CreateToggle({
+    Name = "Show Extra Abilities Cooldowns",
+    CurrentValue = false,
+    Callback = function(Value)
+        cooldownGuiEnabled = Value
+        if Value then
+            createCooldownGui()
+        else
+            if cooldownFrame then
+                cooldownFrame:Destroy()
+                cooldownFrame = nil
+            end
+        end
+    end
+})
+
+-- Get next ability slot (Ability3, Ability4, etc.)
 local function getNextAbilityName()
-    local playerGui = game.Players.LocalPlayer.PlayerGui:WaitForChild("Abilities")
     local i = 3
     while playerGui:FindFirstChild("Ability" .. i) do
         i = i + 1
@@ -861,48 +911,66 @@ local function getNextAbilityName()
     return "Ability" .. i
 end
 
--- Create buttons for each ability
+-- Create buttons for each extra ability
 for _, ability in ipairs(CardAbilities) do
     AbilitiesTab:CreateButton({
         Name = "Get " .. ability.Name,
         Callback = function()
-            local playerGui = game.Players.LocalPlayer.PlayerGui:WaitForChild("Abilities")
             local newAbilityName = getNextAbilityName()
-            
-            -- Duplicate Ability2 as template
             local template = playerGui:FindFirstChild("Ability2")
-            if template then
-                local newAbility = template:Clone()
-                newAbility.Name = newAbilityName
-                newAbility.AbilityName.Text = ability.Name
-                newAbility.Icon.Image = ability.Icon
-                newAbility.Key.Text = ExtraAbilityKeybinds[ability.Name] or ""
-                newAbility.Parent = playerGui
+            if not template then return end
+            local newAbility = template:Clone()
+            newAbility.Name = newAbilityName
+            newAbility.AbilityName.Text = ability.Name
+            newAbility.Icon.Image = ability.Icon
+            newAbility.Key.Text = ExtraAbilityKeybinds[ability.Name] or ""
+            newAbility.Parent = playerGui
 
-                -- Position it below the previous ability
-                local lastIndex = tonumber(newAbilityName:sub(8)) - 1
-                local lastAbility = playerGui:FindFirstChild("Ability" .. lastIndex)
-                if lastAbility then
-                    newAbility.Position = lastAbility.Position + UDim2.new(0,0,0.1,0)
-                end
+            -- Calculate position to avoid overlapping other abilities
+            local lastIndex = tonumber(newAbilityName:sub(8)) - 1
+            local lastAbility = playerGui:FindFirstChild("Ability" .. lastIndex)
+            if lastAbility then
+                newAbility.Position = lastAbility.Position + UDim2.new(0,0,0.1,0)
+            else
+                newAbility.Position = UDim2.new(0.05,0,0.05,0)
             end
+
+            ExtraAbilities[ability.Name] = newAbility
         end
     })
 end
 
--- Single textbox for assigning keybinds
+-- Textbox to assign keybinds to last added ability
 AbilitiesTab:CreateInput({
     Name = "Ability Keybind",
     PlaceholderText = "Type key here",
     CurrentValue = "",
     Callback = function(Value)
-        -- Assigns keybind to the last ability in the module
         local lastAbility = CardAbilities[#CardAbilities]
         if lastAbility then
             ExtraAbilityKeybinds[lastAbility.Name] = Value
+            -- Update GUI if already added
+            if ExtraAbilities[lastAbility.Name] then
+                ExtraAbilities[lastAbility.Name].Key.Text = Value
+            end
         end
     end
 })
+
+-- Fire remote on key press
+UserInputService.InputBegan:Connect(function(input, typing)
+    if typing then return end
+    for abilityName, key in pairs(ExtraAbilityKeybinds) do
+        if input.KeyCode == Enum.KeyCode[key:upper()] and ExtraAbilities[abilityName] then
+            local args = {
+                abilityName,
+                ExtraAbilities[abilityName]
+            }
+            local remote = playerGui:WaitForChild("KeyStuff"):WaitForChild("HandleAllat")
+            remote:FireServer(unpack(args))
+        end
+    end
+end)
 
 local Tab = Window:CreateTab("Anti & Buffs", 0) -- Title, Image
 
