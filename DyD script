@@ -850,12 +850,13 @@ AbilitiesTab:CreateSection("Extra Abilities")
 
 local UserInputService = game:GetService("UserInputService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local SetupRemote = ReplicatedStorage:WaitForChild("Setup")
 local player = game.Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui"):WaitForChild("Abilities")
 local ExtraAbilityKeybinds = {}
 local ExtraAbilities = {} -- Stores {AbilityName = abilityGui}
 
--- Cooldowns GUI
+-- Cooldowns GUI toggle
 local cooldownGuiEnabled = false
 local cooldownFrame
 local function createCooldownGui()
@@ -885,7 +886,6 @@ local function createCooldownGui()
     end
 end
 
--- Toggle for cooldown GUI
 AbilitiesTab:CreateToggle({
     Name = "Show Extra Abilities Cooldowns",
     CurrentValue = false,
@@ -902,7 +902,7 @@ AbilitiesTab:CreateToggle({
     end
 })
 
--- Get next ability slot (Ability3, Ability4, etc.)
+-- Helper to get next ability slot (Ability3, Ability4, etc.)
 local function getNextAbilityName()
     local i = 3
     while playerGui:FindFirstChild("Ability" .. i) do
@@ -916,6 +916,7 @@ for _, ability in ipairs(CardAbilities) do
     AbilitiesTab:CreateButton({
         Name = "Get " .. ability.Name,
         Callback = function()
+            -- Duplicate the GUI
             local newAbilityName = getNextAbilityName()
             local template = playerGui:FindFirstChild("Ability2")
             if not template then return end
@@ -926,7 +927,7 @@ for _, ability in ipairs(CardAbilities) do
             newAbility.Key.Text = ExtraAbilityKeybinds[ability.Name] or ""
             newAbility.Parent = playerGui
 
-            -- Calculate position to avoid overlapping other abilities
+            -- Position correctly
             local lastIndex = tonumber(newAbilityName:sub(8)) - 1
             local lastAbility = playerGui:FindFirstChild("Ability" .. lastIndex)
             if lastAbility then
@@ -936,11 +937,18 @@ for _, ability in ipairs(CardAbilities) do
             end
 
             ExtraAbilities[ability.Name] = newAbility
+
+            -- Fire Setup remote to grant the ability
+            local args = {
+                {Name = ability.Name, Icon = ability.Icon},
+                {Name = ability.Name, Icon = ability.Icon}
+            }
+            SetupRemote:FireServer(unpack(args))
         end
     })
 end
 
--- Textbox to assign keybinds to last added ability
+-- Textbox for assigning keybinds
 AbilitiesTab:CreateInput({
     Name = "Ability Keybind",
     PlaceholderText = "Type key here",
@@ -949,7 +957,6 @@ AbilitiesTab:CreateInput({
         local lastAbility = CardAbilities[#CardAbilities]
         if lastAbility then
             ExtraAbilityKeybinds[lastAbility.Name] = Value
-            -- Update GUI if already added
             if ExtraAbilities[lastAbility.Name] then
                 ExtraAbilities[lastAbility.Name].Key.Text = Value
             end
