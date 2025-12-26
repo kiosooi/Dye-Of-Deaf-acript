@@ -846,10 +846,10 @@ end)
 ---------------------------------------------------------------------
 -- Extra Abilities Section
 ---------------------------------------------------------------------
-local ExtraAbilitiesSection = AbilitiesTab:CreateSection("Extra Abilities")
+AbilitiesTab:CreateSection("Extra Abilities")
 
--- Table to store keybinds for the new abilities
-local AbilityKeybinds = {}
+-- Table to store keybinds for each ability
+local ExtraAbilityKeybinds = {}
 
 -- Function to get the next available Ability slot (Ability3, Ability4, etc.)
 local function getNextAbilityName()
@@ -861,44 +861,45 @@ local function getNextAbilityName()
     return "Ability" .. i
 end
 
--- Loop through your module and create buttons
+-- Create buttons for each ability
 for _, ability in ipairs(CardAbilities) do
-    ExtraAbilitiesSection:CreateButton({
+    AbilitiesTab:CreateButton({
         Name = "Get " .. ability.Name,
         Callback = function()
             local playerGui = game.Players.LocalPlayer.PlayerGui:WaitForChild("Abilities")
-            local abilityName = getNextAbilityName()
+            local newAbilityName = getNextAbilityName()
             
             -- Duplicate Ability2 as template
             local template = playerGui:FindFirstChild("Ability2")
             if template then
                 local newAbility = template:Clone()
-                newAbility.Name = abilityName
+                newAbility.Name = newAbilityName
                 newAbility.AbilityName.Text = ability.Name
                 newAbility.Icon.Image = ability.Icon
-                newAbility.Key.Text = AbilityKeybinds[ability.Name] or ""
+                newAbility.Key.Text = ExtraAbilityKeybinds[ability.Name] or ""
                 newAbility.Parent = playerGui
 
-                -- Position it below previous abilities
-                local lastAbility = playerGui:FindFirstChild("Ability" .. (tonumber(abilityName:sub(8))-1))
+                -- Position it below the previous ability
+                local lastIndex = tonumber(newAbilityName:sub(8)) - 1
+                local lastAbility = playerGui:FindFirstChild("Ability" .. lastIndex)
                 if lastAbility then
-                    newAbility.Position = lastAbility.Position + UDim2.new(0,0,0.1,0) -- adjust spacing
+                    newAbility.Position = lastAbility.Position + UDim2.new(0,0,0.1,0)
                 end
             end
         end
     })
 end
 
--- Textbox for assigning keybinds
-ExtraAbilitiesSection:CreateInput({
+-- Single textbox for assigning keybinds
+AbilitiesTab:CreateInput({
     Name = "Ability Keybind",
     PlaceholderText = "Type key here",
     CurrentValue = "",
     Callback = function(Value)
-        -- This will set the keybind for the next button pressed
+        -- Assigns keybind to the last ability in the module
         local lastAbility = CardAbilities[#CardAbilities]
         if lastAbility then
-            AbilityKeybinds[lastAbility.Name] = Value
+            ExtraAbilityKeybinds[lastAbility.Name] = Value
         end
     end
 })
