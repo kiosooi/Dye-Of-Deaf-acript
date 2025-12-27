@@ -6,6 +6,8 @@ local RunService = game:GetService("RunService")
 local Lighting = game:GetService("Lighting")
 local UserInputService = game:GetService("UserInputService")
 local Stats = game:GetService("Stats")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local SetupRemote = ReplicatedStorage:WaitForChild("Setup")
 
 local LocalPlayer = Players.LocalPlayer
 
@@ -842,6 +844,107 @@ task.spawn(function()
         task.wait(0)
     end
 end)
+
+---------------------------------------------------------------------
+-- Ability Changer
+---------------------------------------------------------------------
+
+AbilitiesTab:CreateSection("Ability changer")
+
+-- Build dropdown list (+ None)
+local AbilityOptions = { "None" }
+for _, ability in ipairs(CardAbilities) do
+    table.insert(AbilityOptions, ability.Name)
+end
+
+local SelectedAbility1 = "None"
+local SelectedAbility2 = "None"
+
+-- Dropdown: Ability 1
+AbilitiesTab:CreateDropdown({
+    Name = "Change Ability1",
+    Options = AbilityOptions,
+    CurrentOption = { "None" },
+    Callback = function(Value)
+        SelectedAbility1 = Value[1]
+    end
+})
+
+-- Dropdown: Ability 2
+AbilitiesTab:CreateDropdown({
+    Name = "Change Ability2",
+    Options = AbilityOptions,
+    CurrentOption = { "None" },
+    Callback = function(Value)
+        SelectedAbility2 = Value[1]
+    end
+})
+
+-- Helper: get ability data
+local function getAbilityData(name)
+    for _, ability in ipairs(CardAbilities) do
+        if ability.Name == name then
+            return ability
+        end
+    end
+end
+
+-- Helper: apply ability to GUI slot
+local function applyAbility(slotName, abilityData)
+    local abilitiesGui = LocalPlayer.PlayerGui:WaitForChild("Abilities")
+    local slot = abilitiesGui:WaitForChild(slotName)
+
+    local nameLabel = slot:FindFirstChild("AbilityName")
+    if nameLabel then
+        nameLabel.Text = abilityData.Name
+    end
+
+    local icon = slot:FindFirstChild("Icon")
+    if icon then
+        icon.Image = abilityData.Icon
+    end
+end
+
+-- Button: Apply Ability Change
+AbilitiesTab:CreateButton({
+    Name = "Change Ability",
+    Callback = function()
+        local args = {}
+
+        -- Ability 1
+        if SelectedAbility1 ~= "None" then
+            local data1 = getAbilityData(SelectedAbility1)
+            if data1 then
+                applyAbility("Ability1", data1)
+                table.insert(args, {
+                    Name = data1.Name,
+                    Icon = data1.Icon
+                })
+            end
+        end
+
+        -- Ability 2
+        if SelectedAbility2 ~= "None" then
+            local data2 = getAbilityData(SelectedAbility2)
+            if data2 then
+                applyAbility("Ability2", data2)
+                table.insert(args, {
+                    Name = data2.Name,
+                    Icon = data2.Icon
+                })
+            end
+        end
+
+        -- Fire Setup remote (must always receive 2 entries)
+        if #args > 0 then
+            if #args == 1 then
+                table.insert(args, args[1])
+            end
+
+            SetupRemote:FireServer(unpack(args))
+        end
+    end
+})
 
 local Tab = Window:CreateTab("Anti & Buffs", 0) -- Title, Image
 
