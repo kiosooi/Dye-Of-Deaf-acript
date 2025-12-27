@@ -946,6 +946,147 @@ AbilitiesTab:CreateButton({
     end
 })
 
+---------------------------------------------------------------------
+-- ===== Ability Changer (Extra Slot) =====
+---------------------------------------------------------------------
+
+AbilitiesTab:CreateSection("Extra Ability")
+
+-- Build dropdown list (NO None)
+local AbilityOptions = {}
+for _, ability in ipairs(CardAbilities) do
+    table.insert(AbilityOptions, ability.Name)
+end
+
+local SelectedExtraAbility = AbilityOptions[1]
+local ExtraAbilityKey = "G"
+local ExtraAbilityEnabled = false
+local ExtraAbilityButton = nil
+
+---------------------------------------------------------------------
+-- Dropdown
+---------------------------------------------------------------------
+AbilitiesTab:CreateDropdown({
+    Name = "Extra Ability",
+    Options = AbilityOptions,
+    CurrentOption = { AbilityOptions[1] },
+    Callback = function(Value)
+        SelectedExtraAbility = Value[1]
+    end
+})
+
+---------------------------------------------------------------------
+-- Keybind textbox
+---------------------------------------------------------------------
+AbilitiesTab:CreateInput({
+    Name = "Ability Keybind",
+    PlaceholderText = "G",
+    CurrentValue = "G",
+    Callback = function(Value)
+        if Value ~= "" then
+            ExtraAbilityKey = Value:upper()
+        end
+    end
+})
+
+---------------------------------------------------------------------
+-- Helper: find ability data
+---------------------------------------------------------------------
+local function getAbilityDataByName(name)
+    for _, ability in ipairs(CardAbilities) do
+        if ability.Name == name then
+            return ability
+        end
+    end
+end
+
+---------------------------------------------------------------------
+-- Toggle
+---------------------------------------------------------------------
+AbilitiesTab:CreateToggle({
+    Name = "Enable Extra Ability",
+    CurrentValue = false,
+    Callback = function(Value)
+        ExtraAbilityEnabled = Value
+
+        local player = LocalPlayer
+        local gui = player:WaitForChild("PlayerGui")
+        local abilitiesGui = gui:WaitForChild("Abilities")
+
+        -- CLEANUP
+        if not Value then
+            if ExtraAbilityButton then
+                ExtraAbilityButton:Destroy()
+                ExtraAbilityButton = nil
+            end
+
+            -- reset original positions
+            for _, name in ipairs({ "Ability1", "Ability2" }) do
+                local ab = abilitiesGui:FindFirstChild(name)
+                if ab then
+                    ab.Position = ab.Position + UDim2.fromOffset(90, 0)
+                end
+            end
+
+            return
+        end
+
+        local data = getAbilityDataByName(SelectedExtraAbility)
+        if not data then return end
+
+        local ability2 = abilitiesGui:FindFirstChild("Ability2")
+        if not ability2 then return end
+
+        -- FIND NEXT SLOT NUMBER
+        local index = 3
+        while abilitiesGui:FindFirstChild("Ability" .. index) do
+            index += 1
+        end
+
+        -- CLONE
+        ExtraAbilityButton = ability2:Clone()
+        ExtraAbilityButton.Name = "Ability" .. index
+        ExtraAbilityButton.Parent = abilitiesGui
+
+        -- POSITIONING
+        ExtraAbilityButton.Position = ability2.Position + UDim2.fromOffset(90, 0)
+
+        -- PUSH EXISTING ABILITIES LEFT
+        for _, name in ipairs({ "Ability1", "Ability2" }) do
+            local ab = abilitiesGui:FindFirstChild(name)
+            if ab then
+                ab.Position = ab.Position - UDim2.fromOffset(90, 0)
+            end
+        end
+
+        -- APPLY DATA
+        ExtraAbilityButton.AbilityName.Text = data.Name
+        ExtraAbilityButton.Icon.Image = data.Icon
+        ExtraAbilityButton.Key.Text = ExtraAbilityKey
+    end
+})
+
+---------------------------------------------------------------------
+-- Keybind listener (manual fire)
+---------------------------------------------------------------------
+UserInputService.InputBegan:Connect(function(input, typing)
+    if typing or not ExtraAbilityEnabled then return end
+    if input.KeyCode.Name ~= ExtraAbilityKey then return end
+    if not ExtraAbilityButton then return end
+
+    local abilitiesGui = LocalPlayer.PlayerGui:FindFirstChild("Abilities")
+    if not abilitiesGui then return end
+
+    local remote =
+        abilitiesGui:WaitForChild("KeyStuff")
+        :WaitForChild("HandleAllat")
+
+    remote:FireServer(
+        ExtraAbilityButton.AbilityName.Text,
+        ExtraAbilityButton
+    )
+end)
+
 local Tab = Window:CreateTab("Anti & Buffs", 0) -- Title, Image
 
 local Section = Tab:CreateSection("Anti Gui")
