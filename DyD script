@@ -1649,11 +1649,7 @@ Tab:CreateButton({
 
 local Tab = Window:CreateTab("Fun", 0) -- Title, Image
 
--- Toggle state
-local resetSpamEnabled = false
-local lastCharacter = nil
-
--- Reset function
+-- Your reset function
 local function forceReset(speaker)
     local humanoid = speaker.Character and speaker.Character:FindFirstChildWhichIsA("Humanoid")
 
@@ -1666,29 +1662,13 @@ local function forceReset(speaker)
     end
 end
 
--- Polling loop
-spawn(function()
-    while true do
-        task.wait(0.1) -- check 10 times per second
-
-        if resetSpamEnabled and LocalPlayer and LocalPlayer.Character then
-            if LocalPlayer.Character ~= lastCharacter then
-                lastCharacter = LocalPlayer.Character -- mark as handled
-                -- Run reset 3 times instantly
-                for i = 1, 3 do
-                    forceReset(LocalPlayer)
-                end
-            end
+-- Rayfield Button
+Tab:CreateButton({
+    Name = "Triple Reset Now",
+    Callback = function()
+        for i = 1, 3 do
+            forceReset(LocalPlayer)
         end
-    end
-end)
-
--- Rayfield Toggle
-Tab:CreateToggle({
-    Name = "Triple Reset On Respawn",
-    CurrentValue = false,
-    Callback = function(Value)
-        resetSpamEnabled = Value
     end
 })
 
