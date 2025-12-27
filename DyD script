@@ -1653,7 +1653,7 @@ local Tab = Window:CreateTab("Fun", 0) -- Title, Image
 local resetSpamEnabled = false
 local characterConnection
 
--- Your reset function (unchanged logic)
+-- Reset function
 local function forceReset(speaker)
     local humanoid = speaker.Character and speaker.Character:FindFirstChildWhichIsA("Humanoid")
 
@@ -1680,12 +1680,14 @@ Tab:CreateToggle({
         end
 
         if resetSpamEnabled then
-            characterConnection = player.CharacterAdded:Connect(function()
-                -- tiny delay to ensure character exists
-                task.wait()
+            -- Wait until character exists
+            local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
 
+            -- Connect to future respawns
+            characterConnection = LocalPlayer.CharacterAdded:Connect(function()
+                task.wait(0.1) -- tiny delay to ensure character fully exists
                 for i = 1, 3 do
-                    forceReset(player)
+                    forceReset(LocalPlayer)
                 end
             end)
         end
