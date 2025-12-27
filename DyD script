@@ -1647,6 +1647,51 @@ Tab:CreateButton({
     end
 })
 
+local Tab = Window:CreateTab("Fun", 0) -- Title, Image
+
+-- Toggle state
+local resetSpamEnabled = false
+local characterConnection
+
+-- Your reset function (unchanged logic)
+local function forceReset(speaker)
+    local humanoid = speaker.Character and speaker.Character:FindFirstChildWhichIsA("Humanoid")
+
+    if replicatesignal then
+        replicatesignal(speaker.Kill)
+    elseif humanoid then
+        humanoid:ChangeState(Enum.HumanoidStateType.Dead)
+    elseif speaker.Character then
+        speaker.Character:BreakJoints()
+    end
+end
+
+-- Rayfield Toggle
+Tab:CreateToggle({
+    Name = "Triple Reset On Respawn",
+    CurrentValue = false,
+    Callback = function(Value)
+        resetSpamEnabled = Value
+
+        -- Clean up old connection
+        if characterConnection then
+            characterConnection:Disconnect()
+            characterConnection = nil
+        end
+
+        if resetSpamEnabled then
+            characterConnection = player.CharacterAdded:Connect(function()
+                -- tiny delay to ensure character exists
+                task.wait()
+
+                for i = 1, 3 do
+                    forceReset(player)
+                end
+            end)
+        end
+    end
+})
+
 local Tab = Window:CreateTab("Misc", 0) -- Title, Image
 
 local Button = Tab:CreateButton({
