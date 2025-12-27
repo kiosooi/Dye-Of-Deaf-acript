@@ -946,138 +946,167 @@ AbilitiesTab:CreateButton({
     end
 })
 
+-- ================= Extra Abilities =================
 AbilitiesTab:CreateSection("Extra abilities")
 
--- cooldown data
+local ExtraAbilitySlots = {} -- stores data for the 3 extra slots
+
+-- Ability cooldowns
 local AbilityCooldowns = {
-    ["Revolver"] = 30,
-    ["Punch"] = 45,
-    ["Banana Peel"] = 30,
-    ["Caretaker"] = 25,
-    ["Hotdog"] = 5,
-    ["Bonus Pad"] = 55,
-    ["Taunt"] = 30,
-    ["Dash"] = 32.5,
-    ["Cloak"] = 50,
-    ["Adrenaline"] = 30,
-    ["Block"] = 25
+    Revolver = 30, Punch = 45, ["Banana Peel"] = 30, Caretaker = 25, Hotdog = 5,
+    ["Bonus Pad"] = 55, Taunt = 30, Dash = 32.5, Cloak = 50, Adrenaline = 30, Block = 25
 }
 
--- slot data
-local ExtraAbilitySlots = {
-    [3] = { Ability = nil, Key = nil, Enabled = false, LastUsed = 0 },
-    [4] = { Ability = nil, Key = nil, Enabled = false, LastUsed = 0 },
-    [5] = { Ability = nil, Key = nil, Enabled = false, LastUsed = 0 },
-}
+-- Create 3 slots
+for slot = 1, 3 do
+    local selectedAbility = ""
+    local keybind = ""
 
--- dropdowns / keybinds / toggles
-for slot = 3, 5 do
+    -- Dropdown
     AbilitiesTab:CreateDropdown({
-        Name = "Ability Slot " .. slot,
-        Options = AbilityNames,
-        CurrentOption = { AbilityNames[1] },
-        Callback = function(Value)
-            ExtraAbilitySlots[slot].Ability = Value[1]
+        Name = "Extra Slot "..slot.." Ability",
+        Options = (function()
+            local opts = {}
+            for _, ability in ipairs(CardAbilities) do
+                table.insert(opts, ability.Name)
+            end
+            return opts
+        end)(),
+        CurrentOption = {},
+        Callback = function(value)
+            selectedAbility = value[1]
         end
     })
 
+    -- Keybind textbox
     AbilitiesTab:CreateInput({
-        Name = "Ability " .. slot .. " Keybind",
+        Name = "Extra Slot "..slot.." Keybind",
         PlaceholderText = "Key",
-        Callback = function(Value)
-            ExtraAbilitySlots[slot].Key = Value:upper()
+        CurrentValue = "",
+        Callback = function(value)
+            keybind = value:upper()
         end
     })
 
+    -- Toggle to enable/disable slot
+    local SlotEnabled = false
     AbilitiesTab:CreateToggle({
-        Name = "Enable Ability " .. slot,
+        Name = "Enable Extra Slot "..slot,
         CurrentValue = false,
-        Callback = function(Value)
-            ExtraAbilitySlots[slot].Enabled = Value
+        Callback = function(value)
+            SlotEnabled = value
         end
+    })
+
+    -- Add the slot data to table
+    table.insert(ExtraAbilitySlots, {
+        Ability = function() return selectedAbility end,
+        Keybind = function() return keybind end,
+        Enabled = function() return SlotEnabled end,
+        SlotNumber = slot
     })
 end
 
--- cooldown gui toggle
-local ShowCooldownGui = false
-local CooldownGui
-
-AbilitiesTab:CreateToggle({
-    Name = "Show Extra Ability Cooldowns",
-    CurrentValue = false,
-    Callback = function(Value)
-        ShowCooldownGui = Value
-        if not Value and CooldownGui then
-            CooldownGui:Destroy()
-            CooldownGui = nil
+-- Button to apply the abilities (fires Setup remote like ability changer)
+AbilitiesTab:CreateButton({
+    Name = "Apply Extra Abilities",
+    Callback = function()
+        for _, slot in ipairs(ExtraAbilitySlots) do
+            if slot.Enabled() and slot.Ability() ~= "" then
+                local abilityName = slot.Ability()
+                local abilityData = nil
+                for _, ab in ipairs(CardAbilities) do
+                    if ab.Name == abilityName then
+                        abilityData = ab
+                        break
+                    end
+                end
+                if abilityData then
+                    local args = {
+                        {Name = abilityData.Name, Icon = abilityData.Icon},
+                        {Name = abilityData.Name, Icon = abilityData.Icon}
+                    }
+                    game:GetService("ReplicatedStorage"):WaitForChild("Setup"):FireServer(unpack(args))
+                end
+            end
         end
     end
 })
 
--- keybind handler
+-- Keybind listener to fire the extra abilities
 UserInputService.InputBegan:Connect(function(input, typing)
     if typing then return end
-
-    for slot, data in pairs(ExtraAbilitySlots) do
-        if data.Enabled and data.Key and input.KeyCode == Enum.KeyCode[data.Key] then
-            local abilitiesGui = LocalPlayer.PlayerGui:WaitForChild("Abilities")
-            local abilityFrame = abilitiesGui:FindFirstChild("Ability" .. slot)
-            if abilityFrame then
-                data.LastUsed = tick()
-                abilitiesGui.KeyStuff.HandleAllat:FireServer(
-                    data.Ability,
-                    abilityFrame
-                )
-            end
-        end
-    end
-end)
-
--- cooldown gui updater
-task.spawn(function()
-    while true do
-        if ShowCooldownGui then
-            if not CooldownGui then
-                CooldownGui = Instance.new("ScreenGui")
-                CooldownGui.Name = "ExtraAbilityCooldowns"
-                CooldownGui.Parent = LocalPlayer.PlayerGui
-
-                local frame = Instance.new("Frame")
-                frame.Parent = CooldownGui
-                frame.AnchorPoint = Vector2.new(1, 1)
-                frame.Position = UDim2.fromScale(0.98, 0.98)
-                frame.Size = UDim2.fromOffset(220, 150)
-                frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-                frame.BackgroundTransparency = 0.15
-                frame.Name = "Holder"
-            end
-
-            local holder = CooldownGui.Holder
-            holder:ClearAllChildren()
-
-            local y = 5
-            for _, data in pairs(ExtraAbilitySlots) do
-                if data.Ability and AbilityCooldowns[data.Ability] then
-                    local cd = AbilityCooldowns[data.Ability]
-                    local remaining = math.max(0, cd - (tick() - data.LastUsed))
-
-                    local label = Instance.new("TextLabel")
-                    label.Parent = holder
-                    label.Position = UDim2.fromOffset(6, y)
-                    label.Size = UDim2.new(1, -12, 0, 22)
-                    label.BackgroundTransparency = 1
-                    label.TextXAlignment = Left
-                    label.TextSize = 14
-                    label.TextColor3 = Color3.new(1,1,1)
-                    label.Text = data.Ability .. " : " .. string.format("%.1f", remaining)
-
-                    y += 24
+    for _, slot in ipairs(ExtraAbilitySlots) do
+        if slot.Enabled() and input.KeyCode == Enum.KeyCode[slot.Keybind()] then
+            local abilityName = slot.Ability()
+            if abilityName ~= "" then
+                local abilityData = nil
+                for _, ab in ipairs(CardAbilities) do
+                    if ab.Name == abilityName then
+                        abilityData = ab
+                        break
+                    end
+                end
+                if abilityData then
+                    local args = {
+                        {Name = abilityData.Name, Icon = abilityData.Icon},
+                        {Name = abilityData.Name, Icon = abilityData.Icon}
+                    }
+                    game:GetService("ReplicatedStorage"):WaitForChild("Setup"):FireServer(unpack(args))
                 end
             end
         end
-        task.wait(0.1)
     end
 end)
+
+-- Cooldown GUI toggle
+local ShowExtraCooldowns = false
+AbilitiesTab:CreateToggle({
+    Name = "Show Extra Ability Cooldowns",
+    CurrentValue = false,
+    Callback = function(value)
+        ShowExtraCooldowns = value
+        if ShowExtraCooldowns then
+            -- Create a small GUI in bottom-left
+            local screenGui = Instance.new("ScreenGui")
+            screenGui.Name = "ExtraAbilityCooldowns"
+            screenGui.ResetOnSpawn = false
+            screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+            local frame = Instance.new("Frame")
+            frame.Size = UDim2.new(0,200,0,150)
+            frame.Position = UDim2.new(0,5,1,-155)
+            frame.BackgroundTransparency = 0.3
+            frame.BackgroundColor3 = Color3.fromRGB(30,30,30)
+            frame.Parent = screenGui
+
+            for i, slot in ipairs(ExtraAbilitySlots) do
+                local lbl = Instance.new("TextLabel")
+                lbl.Size = UDim2.new(1, -10, 0, 20)
+                lbl.Position = UDim2.new(0,5,0,(i-1)*25)
+                lbl.TextColor3 = Color3.fromRGB(255,255,255)
+                lbl.Text = slot.Ability()..": "..tostring(AbilityCooldowns[slot.Ability()] or "?").."s"
+                lbl.BackgroundTransparency = 1
+                lbl.TextXAlignment = Enum.TextXAlignment.Left
+                lbl.Parent = frame
+            end
+
+            -- Auto update cooldown text
+            task.spawn(function()
+                while ShowExtraCooldowns and frame.Parent do
+                    for i, slot in ipairs(ExtraAbilitySlots) do
+                        local lbl = frame:GetChildren()[i]
+                        if lbl then
+                            lbl.Text = slot.Ability()..": "..tostring(AbilityCooldowns[slot.Ability()] or "?").."s"
+                        end
+                    end
+                    task.wait(1)
+                end
+                if frame.Parent then frame:Destroy() end
+            end)
+        end
+    end
+})
 
 local Tab = Window:CreateTab("Anti & Buffs", 0) -- Title, Image
 
