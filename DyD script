@@ -950,9 +950,9 @@ AbilitiesTab:CreateButton({
 -- ===== Ability Changer (Extra Slot) =====
 ---------------------------------------------------------------------
 
-AbilitiesTab:CreateSection("Ability Changer")
+AbilitiesTab:CreateSection("Ability Slots")
 
--- Build dropdown list (NO None)
+-- Build dropdown list
 local AbilityOptions = {}
 for _, ability in ipairs(CardAbilities) do
     table.insert(AbilityOptions, ability.Name)
@@ -993,7 +993,7 @@ AbilitiesTab:CreateInput({
 })
 
 ---------------------------------------------------------------------
--- Helper: find ability data
+-- Helper: get ability data
 ---------------------------------------------------------------------
 local function getAbilityDataByName(name)
     for _, ability in ipairs(CardAbilities) do
@@ -1004,50 +1004,7 @@ local function getAbilityDataByName(name)
 end
 
 ---------------------------------------------------------------------
--- Cooldown GUI
----------------------------------------------------------------------
-local ExtraCooldownGui = nil
-local ShowExtraCooldowns = false
-local function createExtraCooldownGui()
-    if ExtraCooldownGui then ExtraCooldownGui:Destroy() end
-
-    ExtraCooldownGui = Instance.new("ScreenGui")
-    ExtraCooldownGui.Name = "ExtraAbilityCooldowns"
-    ExtraCooldownGui.ResetOnSpawn = false
-    ExtraCooldownGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
-
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(0, 200, 0, 50)
-    frame.Position = UDim2.new(0, 5, 1, -55)
-    frame.BackgroundTransparency = 0.3
-    frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    frame.Parent = ExtraCooldownGui
-end
-
-local function updateExtraCooldownGui()
-    if not ExtraCooldownGui then return end
-    ExtraCooldownGui:ClearAllChildren()
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(0, 200, 0, 50)
-    frame.Position = UDim2.new(0, 5, 1, -55)
-    frame.BackgroundTransparency = 0.3
-    frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    frame.Parent = ExtraCooldownGui
-
-    if ExtraAbilityEnabled and ExtraAbilityButton then
-        local lbl = Instance.new("TextLabel")
-        lbl.Size = UDim2.new(1, -10, 0, 20)
-        lbl.Position = UDim2.new(0, 5, 0, 5)
-        lbl.TextColor3 = Color3.fromRGB(255, 255, 255)
-        lbl.Text = ExtraAbilityButton.AbilityName.Text..": "..tostring(AbilityCooldowns[ExtraAbilityButton.AbilityName.Text] or "?").."s"
-        lbl.BackgroundTransparency = 1
-        lbl.TextXAlignment = Enum.TextXAlignment.Left
-        lbl.Parent = frame
-    end
-end
-
----------------------------------------------------------------------
--- Toggle
+-- Toggle: Enable Extra Ability
 ---------------------------------------------------------------------
 AbilitiesTab:CreateToggle({
     Name = "Enable Extra Ability",
@@ -1055,18 +1012,16 @@ AbilitiesTab:CreateToggle({
     Callback = function(Value)
         ExtraAbilityEnabled = Value
 
-        local player = LocalPlayer
-        local gui = player:WaitForChild("PlayerGui")
-        local abilitiesGui = gui:WaitForChild("Abilities")
+        local abilitiesGui = LocalPlayer.PlayerGui:WaitForChild("Abilities")
 
-        -- CLEANUP
+        -- DISABLE → CLEAN UP
         if not Value then
             if ExtraAbilityButton then
                 ExtraAbilityButton:Destroy()
                 ExtraAbilityButton = nil
             end
-            updateExtraCooldownGui()
-            -- reset original positions
+
+            -- Reset Ability1 & 2 positions
             for _, name in ipairs({ "Ability1", "Ability2" }) do
                 local ab = abilitiesGui:FindFirstChild(name)
                 if ab then
@@ -1082,21 +1037,21 @@ AbilitiesTab:CreateToggle({
         local ability2 = abilitiesGui:FindFirstChild("Ability2")
         if not ability2 then return end
 
-        -- FIND NEXT SLOT NUMBER
+        -- Find next available slot
         local index = 3
         while abilitiesGui:FindFirstChild("Ability" .. index) do
             index += 1
         end
 
-        -- CLONE
+        -- Clone Ability2
         ExtraAbilityButton = ability2:Clone()
         ExtraAbilityButton.Name = "Ability" .. index
         ExtraAbilityButton.Parent = abilitiesGui
 
-        -- POSITIONING
+        -- Position it to the right
         ExtraAbilityButton.Position = ability2.Position + UDim2.fromOffset(90, 0)
 
-        -- PUSH EXISTING ABILITIES LEFT
+        -- Push Ability1 & 2 left
         for _, name in ipairs({ "Ability1", "Ability2" }) do
             local ab = abilitiesGui:FindFirstChild(name)
             if ab then
@@ -1104,28 +1059,27 @@ AbilitiesTab:CreateToggle({
             end
         end
 
-        -- APPLY DATA
+        -- Apply ability data
         ExtraAbilityButton.AbilityName.Text = data.Name
         ExtraAbilityButton.Icon.Image = data.Icon
         ExtraAbilityButton.Key.Text = ExtraAbilityKey
-
-        updateExtraCooldownGui()
     end
 })
 
 ---------------------------------------------------------------------
--- Keybind listener (manual fire)
+-- Keybind listener (fires ability)
 ---------------------------------------------------------------------
 UserInputService.InputBegan:Connect(function(input, typing)
-    if typing or not ExtraAbilityEnabled then return end
-    if input.KeyCode.Name ~= ExtraAbilityKey then return end
+    if typing then return end
+    if not ExtraAbilityEnabled then return end
     if not ExtraAbilityButton then return end
+    if input.KeyCode.Name ~= ExtraAbilityKey then return end
 
     local abilitiesGui = LocalPlayer.PlayerGui:FindFirstChild("Abilities")
     if not abilitiesGui then return end
 
-    local remote =
-        abilitiesGui:WaitForChild("KeyStuff")
+    local remote = abilitiesGui
+        :WaitForChild("KeyStuff")
         :WaitForChild("HandleAllat")
 
     remote:FireServer(
@@ -1133,31 +1087,6 @@ UserInputService.InputBegan:Connect(function(input, typing)
         ExtraAbilityButton
     )
 end)
-
----------------------------------------------------------------------
--- Toggle for showing cooldown GUI
----------------------------------------------------------------------
-AbilitiesTab:CreateToggle({
-    Name = "Show Extra Ability Cooldowns",
-    CurrentValue = false,
-    Callback = function(Value)
-        ShowExtraCooldowns = Value
-        if Value then
-            createExtraCooldownGui()
-            task.spawn(function()
-                while ShowExtraCooldowns do
-                    updateExtraCooldownGui()
-                    task.wait(1)
-                end
-            end)
-        else
-            if ExtraCooldownGui then
-                ExtraCooldownGui:Destroy()
-                ExtraCooldownGui = nil
-            end
-        end
-    end
-})
 
 local Tab = Window:CreateTab("Anti & Buffs", 0) -- Title, Image
 
