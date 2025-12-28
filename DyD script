@@ -1638,6 +1638,22 @@ Tab:CreateButton({
     end
 })
 
+Tab:CreateButton({
+    Name = "Pizzeria Bug Spot",
+    Callback = function()
+        local player = game.Players.LocalPlayer
+        local character = player.Character or player.CharacterAdded:Wait()
+        local hrp = character:WaitForChild("HumanoidRootPart")
+
+        hrp.CFrame = CFrame.new(
+            249.013016, 111.920181, -873.251099,
+            0.0108649032, -8.16408701e-08, 0.999940991,
+            -1.594805e-08, 1, 8.18189747e-08,
+            -0.999940991, -1.6836065e-08, 0.0108649032
+        )
+    end
+})
+
 -- Go to Civilian spawn (random "c" part)
 Tab:CreateButton({
     Name = "Go to Civilian spawn",
