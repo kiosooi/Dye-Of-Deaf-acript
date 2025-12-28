@@ -1021,7 +1021,6 @@ AbilitiesTab:CreateToggle({
                 ExtraAbilityButton = nil
             end
 
-            -- Reset Ability1 & 2 positions
             for _, name in ipairs({ "Ability1", "Ability2" }) do
                 local ab = abilitiesGui:FindFirstChild(name)
                 if ab then
@@ -1037,21 +1036,19 @@ AbilitiesTab:CreateToggle({
         local ability2 = abilitiesGui:FindFirstChild("Ability2")
         if not ability2 then return end
 
-        -- Find next available slot
+        -- 🔹 FIND NEXT SLOT
         local index = 3
         while abilitiesGui:FindFirstChild("Ability" .. index) do
             index += 1
         end
 
-        -- Clone Ability2
+        -- 🔹 CLONE ABILITY BUTTON
         ExtraAbilityButton = ability2:Clone()
         ExtraAbilityButton.Name = "Ability" .. index
         ExtraAbilityButton.Parent = abilitiesGui
-
-        -- Position it to the right
         ExtraAbilityButton.Position = ability2.Position + UDim2.fromOffset(90, 0)
 
-        -- Push Ability1 & 2 left
+        -- 🔹 PUSH EXISTING LEFT
         for _, name in ipairs({ "Ability1", "Ability2" }) do
             local ab = abilitiesGui:FindFirstChild(name)
             if ab then
@@ -1059,15 +1056,22 @@ AbilitiesTab:CreateToggle({
             end
         end
 
-        -- Apply ability data
+        -- 🔹 APPLY VISUAL DATA
         ExtraAbilityButton.AbilityName.Text = data.Name
         ExtraAbilityButton.Icon.Image = data.Icon
         ExtraAbilityButton.Key.Text = ExtraAbilityKey
+
+        -- ✅ APPLY ACCESSORIES (Setup Remote)
+        local SetupRemote = game:GetService("ReplicatedStorage"):WaitForChild("Setup")
+        SetupRemote:FireServer(
+            { Name = data.Name, Icon = data.Icon },
+            { Name = data.Name, Icon = data.Icon }
+        )
     end
 })
 
 ---------------------------------------------------------------------
--- Keybind listener (fires ability)
+-- Keybind listener (manual fire)
 ---------------------------------------------------------------------
 UserInputService.InputBegan:Connect(function(input, typing)
     if typing then return end
