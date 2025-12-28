@@ -1622,6 +1622,22 @@ Tab:CreateButton({
     end
 })
 
+Tab:CreateButton({
+    Name = "Frozen Tundra Bug Spot",
+    Callback = function()
+        local player = game.Players.LocalPlayer
+        local character = player.Character or player.CharacterAdded:Wait()
+        local hrp = character:WaitForChild("HumanoidRootPart")
+
+        hrp.CFrame = CFrame.new(
+            93.3155975, -4.03819609, 2780.45923,
+            -0.207423374, 0.976838291, -0.052559156,
+            -0.00340221613, 0.0530069917, 0.998588324,
+            0.978245378, 0.20730938, -0.00767147448
+        )
+    end
+})
+
 -- Go to Civilian spawn (random "c" part)
 Tab:CreateButton({
     Name = "Go to Civilian spawn",
