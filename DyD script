@@ -1428,7 +1428,7 @@ Tab:CreateToggle({
 })
 
 ---------------------------------------------------------------------
--- Anti Slowdown / Stun
+-- Anti Slowdown / Stun (Workspace Model Version)
 ---------------------------------------------------------------------
 
 local AntiSlowEnabled = false
@@ -1445,26 +1445,26 @@ Tab:CreateToggle({
             AntiSlowConnection = nil
         end
 
-        if not Value then
-            return
-        end
+        if not Value then return end
 
         AntiSlowConnection = RunService.Heartbeat:Connect(function()
-            local player = LocalPlayer
-            if not player then return end
+            if not AntiSlowEnabled then return end
 
-            local teams = game:GetService("Teams")
-            local character =
-                (teams:FindFirstChild("Civilians") and teams.Civilians:FindFirstChild(player.Name)) or
-                (teams:FindFirstChild("Killers") and teams.Killers:FindFirstChild(player.Name))
+            local teamsFolder = workspace:FindFirstChild("Teams")
+            if not teamsFolder then return end
 
-            if not character then return end
+            local characterModel =
+                (teamsFolder:FindFirstChild("Civilians") and teamsFolder.Civilians:FindFirstChild(LocalPlayer.Name))
+                or
+                (teamsFolder:FindFirstChild("Killers") and teamsFolder.Killers:FindFirstChild(LocalPlayer.Name))
 
-            local humanoid = character:FindFirstChildOfClass("Humanoid")
+            if not characterModel then return end
+
+            local humanoid = characterModel:FindFirstChildOfClass("Humanoid")
             if not humanoid then return end
 
-            -- Handle SetSpeed
-            local setSpeed = character:FindFirstChild("SetSpeed")
+            -- SetSpeed logic
+            local setSpeed = characterModel:FindFirstChild("SetSpeed")
             if setSpeed then
                 local speed = setSpeed.Value
                 if speed < 8 then
@@ -1473,12 +1473,10 @@ Tab:CreateToggle({
                 humanoid.WalkSpeed = speed
             end
 
-            -- Handle ExtraSpeed
-            local extraSpeed = character:FindFirstChild("ExtraSpeed")
-            if extraSpeed then
-                if extraSpeed.Value < 0 then
-                    extraSpeed.Value = 0
-                end
+            -- ExtraSpeed logic
+            local extraSpeed = characterModel:FindFirstChild("ExtraSpeed")
+            if extraSpeed and extraSpeed.Value < 0 then
+                extraSpeed.Value = 0
             end
         end)
     end
