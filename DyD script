@@ -1427,6 +1427,63 @@ Tab:CreateToggle({
     end
 })
 
+---------------------------------------------------------------------
+-- Anti Slowdown / Stun
+---------------------------------------------------------------------
+
+local AntiSlowEnabled = false
+local AntiSlowConnection
+
+Tab:CreateToggle({
+    Name = "Anti Slowdown/Stun",
+    CurrentValue = false,
+    Callback = function(Value)
+        AntiSlowEnabled = Value
+
+        if AntiSlowConnection then
+            AntiSlowConnection:Disconnect()
+            AntiSlowConnection = nil
+        end
+
+        if not Value then
+            return
+        end
+
+        AntiSlowConnection = RunService.Heartbeat:Connect(function()
+            local player = LocalPlayer
+            if not player then return end
+
+            local teams = game:GetService("Teams")
+            local character =
+                (teams:FindFirstChild("Civilians") and teams.Civilians:FindFirstChild(player.Name)) or
+                (teams:FindFirstChild("Killers") and teams.Killers:FindFirstChild(player.Name))
+
+            if not character then return end
+
+            local humanoid = character:FindFirstChildOfClass("Humanoid")
+            if not humanoid then return end
+
+            -- Handle SetSpeed
+            local setSpeed = character:FindFirstChild("SetSpeed")
+            if setSpeed then
+                local speed = setSpeed.Value
+                if speed < 8 then
+                    speed = 8
+                end
+                humanoid.WalkSpeed = speed
+            end
+
+            -- Handle ExtraSpeed
+            local extraSpeed = character:FindFirstChild("ExtraSpeed")
+            if extraSpeed then
+                if extraSpeed.Value < 0 then
+                    extraSpeed.Value = 0
+                end
+            end
+        end)
+    end
+})
+
 local Tab = Window:CreateTab("Blackout Gamemode", 0) -- Title, Image
 
 local aiESPEnabled = false
