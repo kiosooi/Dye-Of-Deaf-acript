@@ -1428,7 +1428,7 @@ Tab:CreateToggle({
 })
 
 ---------------------------------------------------------------------
--- Anti Slowdown / Stun (Workspace Model Version)
+-- Anti Slowdown / Stun (FINAL FIX)
 ---------------------------------------------------------------------
 
 local AntiSlowEnabled = false
@@ -1460,20 +1460,13 @@ Tab:CreateToggle({
 
             if not characterModel then return end
 
-            local humanoid = characterModel:FindFirstChildOfClass("Humanoid")
-            if not humanoid then return end
-
-            -- SetSpeed logic
+            -- === FIX SETSPEED (THIS WAS THE ISSUE) ===
             local setSpeed = characterModel:FindFirstChild("SetSpeed")
-            if setSpeed then
-                local speed = setSpeed.Value
-                if speed < 8 then
-                    speed = 8
-                end
-                humanoid.WalkSpeed = speed
+            if setSpeed and setSpeed.Value < 8 then
+                setSpeed.Value = 8
             end
 
-            -- ExtraSpeed logic
+            -- === FIX EXTRASPEED ===
             local extraSpeed = characterModel:FindFirstChild("ExtraSpeed")
             if extraSpeed and extraSpeed.Value < 0 then
                 extraSpeed.Value = 0
