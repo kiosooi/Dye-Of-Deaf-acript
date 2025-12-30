@@ -1462,8 +1462,8 @@ Tab:CreateToggle({
 
             -- Protect SetSpeed (minimum only)
             local setSpeed = characterModel:FindFirstChild("SetSpeed")
-            if setSpeed and setSpeed.Value < 8 then
-                setSpeed.Value = 8
+            if setSpeed and setSpeed.Value < 12 then
+                setSpeed.Value = 12
             end
 
             -- Fix ExtraSpeed negatives
@@ -1472,43 +1472,6 @@ Tab:CreateToggle({
                 extraSpeed.Value = 0
             end
         end)
-    end
-})
-
----------------------------------------------------------------------
--- SetSpeed Textbox
----------------------------------------------------------------------
-
-local SetSpeedValue = 16
-
-Tab:CreateInput({
-    Name = "SetSpeed Value",
-    PlaceholderText = "Min 8",
-    CurrentValue = tostring(SetSpeedValue),
-    Callback = function(Value)
-        local num = tonumber(Value)
-        if not num then return end
-
-        if num < 8 then
-            num = 8
-        end
-
-        SetSpeedValue = num
-
-        local teamsFolder = workspace:FindFirstChild("Teams")
-        if not teamsFolder then return end
-
-        local characterModel =
-            (teamsFolder:FindFirstChild("Civilians") and teamsFolder.Civilians:FindFirstChild(LocalPlayer.Name))
-            or
-            (teamsFolder:FindFirstChild("Killers") and teamsFolder.Killers:FindFirstChild(LocalPlayer.Name))
-
-        if not characterModel then return end
-
-        local setSpeed = characterModel:FindFirstChild("SetSpeed")
-        if setSpeed then
-            setSpeed.Value = SetSpeedValue
-        end
     end
 })
 
