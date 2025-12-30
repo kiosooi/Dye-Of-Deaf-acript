@@ -1428,7 +1428,7 @@ Tab:CreateToggle({
 })
 
 ---------------------------------------------------------------------
--- Anti Slowdown / Stun
+-- Anti Slowdown / Stun (Delete SetSpeed)
 ---------------------------------------------------------------------
 
 local AntiSlowEnabled = false
@@ -1460,13 +1460,13 @@ Tab:CreateToggle({
 
             if not characterModel then return end
 
-            -- Protect SetSpeed (minimum only)
+            -- 🔥 DELETE SetSpeed (main fix)
             local setSpeed = characterModel:FindFirstChild("SetSpeed")
-            if setSpeed and setSpeed.Value < 12 then
-                setSpeed.Value = 12
+            if setSpeed then
+                setSpeed:Destroy()
             end
 
-            -- Fix ExtraSpeed negatives
+            -- ✅ Fix ExtraSpeed negatives
             local extraSpeed = characterModel:FindFirstChild("ExtraSpeed")
             if extraSpeed and extraSpeed.Value < 0 then
                 extraSpeed.Value = 0
