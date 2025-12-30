@@ -1475,6 +1475,54 @@ Tab:CreateToggle({
     end
 })
 
+---------------------------------------------------------------------
+-- Force Jump Toggle
+---------------------------------------------------------------------
+
+local JumpEnabled = false
+local JumpConnection
+
+Tab:CreateToggle({
+    Name = "Enable Jump",
+    CurrentValue = false,
+    Callback = function(Value)
+        JumpEnabled = Value
+
+        if JumpConnection then
+            JumpConnection:Disconnect()
+            JumpConnection = nil
+        end
+
+        if not Value then return end
+
+        JumpConnection = RunService.Heartbeat:Connect(function()
+            if not JumpEnabled then return end
+
+            local teamsFolder = workspace:FindFirstChild("Teams")
+            if not teamsFolder then return end
+
+            local characterModel =
+                (teamsFolder:FindFirstChild("Civilians") and teamsFolder.Civilians:FindFirstChild(LocalPlayer.Name))
+                or
+                (teamsFolder:FindFirstChild("Killers") and teamsFolder.Killers:FindFirstChild(LocalPlayer.Name))
+
+            if not characterModel then return end
+
+            local humanoid = characterModel:FindFirstChildOfClass("Humanoid")
+            if not humanoid then return end
+
+            -- Force jump to be allowed
+            humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, true)
+            humanoid:SetStateEnabled(Enum.HumanoidStateType.Freefall, true)
+
+            -- Fix games that set JumpPower to 0
+            if humanoid.UseJumpPower and humanoid.JumpPower < 50 then
+                humanoid.JumpPower = 50
+            end
+        end)
+    end
+})
+
 local Tab = Window:CreateTab("Blackout Gamemode", 0) -- Title, Image
 
 local aiESPEnabled = false
