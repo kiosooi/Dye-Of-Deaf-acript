@@ -772,6 +772,8 @@ AbilitiesTab:CreateButton({
     end
 })
 
+local Paragraph = Tab:CreateParagraph({Title = "WARNING", Content = "This synergy is admin only so if a dev sees you or someone reports you when you are using this synergy you will get permamently banned and the devs will prob add a whitelist to it"})
+
 -- AnatomyScriptium (Slash + Lunge)
 AbilitiesTab:CreateButton({
     Name = "AnatomyScriptium09 (Slash + Lunge)",
