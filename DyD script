@@ -601,6 +601,8 @@ local CardAbilities = {
     { Name = "Adrenaline", Icon = "rbxassetid://130391534451239" },
     { Name = "Block", Icon = "rbxassetid://114764935401015" },
     { Name = "Banana Peel", Icon = "rbxassetid://77890674914190" },
+	{ Name = "Slash", Icon = "rbxassetid://91352291203781" },
+	{ Name = "Lunge", Icon = "rbxassetid://127141422283006" },
 }
 
 -- Build dropdown name list
@@ -770,7 +772,18 @@ AbilitiesTab:CreateButton({
     end
 })
 
-AbilitiesTab:CreateSection("auto use Abilities if you are lazy to do it yourself")
+-- AnatomyScriptium (Slash + Lunge)
+AbilitiesTab:CreateButton({
+    Name = "AnatomyScriptium09 (Slash + Lunge)",
+    Callback = function()
+        SetupRemote:FireServer(
+            {Name = "Slash", Icon = "rbxassetid://91352291203781"},
+            {Name = "Lunge", Icon = "rbxassetid://127141422283006"}
+        )
+    end
+})
+
+AbilitiesTab:CreateSection("auto use Abilities if you are lazy to do it yourself like using hotdog")
 
 -- Toggle states
 local SpamAbility1 = false
